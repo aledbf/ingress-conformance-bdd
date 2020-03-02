@@ -29,13 +29,9 @@ jobs:
         fetch-depth: 1
         path: go/src/github.com/${{ github.repository }}
 
-    - name: Get dependencies
-      run: |
-        go get github.com/onsi/ginkgo/ginkgo
-
     - name: Build
       run: |
         set -x
 
         cd $GOPATH/src/github.com/${{ github.repository }}
-        make build
+        make build-image

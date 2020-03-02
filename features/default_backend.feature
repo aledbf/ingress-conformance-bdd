@@ -31,6 +31,7 @@ Feature: Default backend
              When The ingress status shows the IP address or FQDN where is exposed
               And Header "Host" with value "foo.bar"
              Then Send HTTP request with <path> and <method> checking response status code is 404:
+                  |  path   | method  |
                   | /test   | GET     |
                   | /       | POST    |
                   | /       | PUT     |

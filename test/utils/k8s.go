@@ -5,6 +5,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	v1beta1 "k8s.io/api/networking/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,8 +21,12 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
-// NamespaceCleanupTimeout failures caused by leaked resources from a previous test run.
-const NamespaceCleanupTimeout = 5 * time.Minute
+const (
+	// NamespaceCleanupTimeout failures caused by leaked resources from a previous test run.
+	NamespaceCleanupTimeout = 5 * time.Minute
+	// WaitForIngressAddressTimeout wait time for valid ingress status
+	WaitForIngressAddressTimeout = 5 * time.Minute
+)
 
 var KubeClient clientset.Interface
 
@@ -134,9 +139,104 @@ func IsRetryableAPIError(err error) bool {
 		apierrs.IsTooManyRequests(err) || utilnet.IsProbableEOF(err) || utilnet.IsConnectionReset(err) {
 		return true
 	}
+
 	// If the error sends the Retry-After header, we respect it as an explicit confirmation we should retry.
 	if _, shouldRetry := apierrs.SuggestsClientDelay(err); shouldRetry {
 		return true
 	}
+
 	return false
+}
+
+// CreateIngress creates an Ingress object and retunrs it, throws error if it already exists.
+func CreateIngress(c kubernetes.Interface, ingress *v1beta1.Ingress) (*v1beta1.Ingress, error) {
+	err := createIngressWithRetries(c, ingress.Namespace, ingress)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.NetworkingV1beta1().Ingresses(ingress.Namespace).Get(ingress.Name, metav1.GetOptions{})
+}
+
+func createIngressWithRetries(c kubernetes.Interface, namespace string, obj *v1beta1.Ingress) error {
+	if obj == nil {
+		return fmt.Errorf("Object provided to create is empty")
+	}
+
+	createFunc := func() (bool, error) {
+		_, err := c.NetworkingV1beta1().Ingresses(namespace).Create(obj)
+		if err == nil {
+			return true, nil
+		}
+
+		if apierrs.IsAlreadyExists(err) {
+			return false, err
+		}
+
+		if IsRetryableAPIError(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("Failed to create object with non-retriable error: %v", err)
+	}
+
+	return retryWithExponentialBackOff(createFunc)
+}
+
+// WaitForIngressAddress waits for the Ingress to acquire an address.
+func WaitForIngressAddress(c clientset.Interface, ns, ingName, class string, timeout time.Duration) (string, error) {
+	var address string
+	err := wait.PollImmediate(10*time.Second, timeout, func() (bool, error) {
+		ipOrNameList, err := getIngressAddress(c, ns, ingName, class)
+		if err != nil || len(ipOrNameList) == 0 {
+			if IsRetryableAPIError(err) {
+				return false, nil
+			}
+
+			return false, err
+		}
+
+		address = ipOrNameList[0]
+		return true, nil
+	})
+
+	return address, err
+}
+
+// getIngressAddress returns the ips/hostnames associated with the Ingress.
+func getIngressAddress(c clientset.Interface, ns, name, class string) ([]string, error) {
+	ing, err := c.NetworkingV1beta1().Ingresses(ns).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var addresses []string
+	for _, a := range ing.Status.LoadBalancer.Ingress {
+		if a.IP != "" {
+			addresses = append(addresses, a.IP)
+		}
+		if a.Hostname != "" {
+			addresses = append(addresses, a.Hostname)
+		}
+	}
+
+	return addresses, nil
+}
+
+const (
+	// Parameters for retrying with exponential backoff.
+	retryBackoffInitialDuration = 100 * time.Millisecond
+	retryBackoffFactor          = 3
+	retryBackoffJitter          = 0
+	retryBackoffSteps           = 6
+)
+
+// Utility for retrying the given function with exponential backoff.
+func retryWithExponentialBackOff(fn wait.ConditionFunc) error {
+	backoff := wait.Backoff{
+		Duration: retryBackoffInitialDuration,
+		Factor:   retryBackoffFactor,
+		Jitter:   retryBackoffJitter,
+		Steps:    retryBackoffSteps,
+	}
+	return wait.ExponentialBackoff(backoff, fn)
 }

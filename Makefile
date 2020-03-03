@@ -2,7 +2,7 @@
 # And add help text after each target name starting with '\#\#'
 .DEFAULT_GOAL:=help
 
-.PHONY: help build build-image test dep-ensure check-go-version update-conformance-list
+.PHONY: help test build-image check-go-version run-conformance local-tests build-report show-report
 
 .EXPORT_ALL_VARIABLES:
 
@@ -33,10 +33,11 @@ run-conformance: ## Run conformance tests using a pod
 	@RESULTS_DIR="/tmp/results" \
 	./images/conformance/run_e2e.sh
 
-run-tests: ## Run tests and generate cucumber report in directory reports
+build-report: ## Run tests and generate HTML report in directory
+	echo "Running go tests with cucumber output..."
 	go test --output-file "$(PWD)/reports/ingress-conformance.json" --format cucumber
 
-build-report: run-tests ## Run tests and generate HTML report in directory
+	echo "Generating report..."
 	@docker run --rm \
 		--name build-report \
 		-v "$(PWD)/reports/build":/usr/src/conformance \
@@ -49,9 +50,12 @@ build-report: run-tests ## Run tests and generate HTML report in directory
 		maven:3.6.3-jdk-11-slim mvn -Duser.home=/var/maven clean compile exec:java
 
 show-report: build-report ## Starts NGINX locally to access reports using http://localhost
+	echo "Starting web server..."
+	echo ""
+	echo "Open http://localhost:8080"
 	@docker run --rm \
 		--name show-report \
 		-p 8080:8080 \
-		-v "$(PWD)/output/cucumber-html-reports":/www:ro \
-		-v "$(PWD)/output/nginx.conf":/etc/nginx/nginx.conf:ro \
+		-v "$(PWD)/reports/output/cucumber-html-reports":/www:ro \
+		-v "$(PWD)/reports/output/nginx.conf":/etc/nginx/nginx.conf:ro \
 		nginx:1.17.8-alpine

@@ -26,9 +26,9 @@ const (
 	NamespaceCleanupTimeout = 5 * time.Minute
 	// WaitForIngressAddressTimeout wait time for valid ingress status
 	WaitForIngressAddressTimeout = 5 * time.Minute
+	// IngressWaitInterval time to wait between checks for a condition
+	IngressWaitInterval = 5 * time.Second
 )
-
-var KubeClient clientset.Interface
 
 // WaitForService waits until the service appears (exist == true), or disappears (exist == false)
 func WaitForService(c clientset.Interface, namespace, name string, exist bool, interval, timeout time.Duration) error {
@@ -49,15 +49,18 @@ func WaitForService(c clientset.Interface, namespace, name string, exist bool, i
 			return false, nil
 		}
 	})
+
 	if err != nil {
 		stateMsg := map[bool]string{true: "to appear", false: "to disappear"}
 		return fmt.Errorf("error waiting for service %s/%s %s: %v", namespace, name, stateMsg[exist], err)
 	}
+
 	return nil
 }
 
 //WaitForServiceEndpointsNum waits until the amount of endpoints that implement service to expectNum.
-func WaitForServiceEndpointsNum(c clientset.Interface, namespace, serviceName string, expectNum int, interval, timeout time.Duration) error {
+func WaitForServiceEndpointsNum(c clientset.Interface, namespace, serviceName string,
+	expectNum int, interval, timeout time.Duration) error {
 	return wait.Poll(interval, timeout, func() (bool, error) {
 		klog.Infof("Waiting for amount of service:%s endpoints to be %d", serviceName, expectNum)
 		list, err := c.CoreV1().Endpoints(namespace).List(metav1.ListOptions{})
@@ -70,6 +73,7 @@ func WaitForServiceEndpointsNum(c clientset.Interface, namespace, serviceName st
 				return true, nil
 			}
 		}
+
 		return false, nil
 	})
 }
@@ -79,6 +83,7 @@ func countEndpointsNum(e *corev1.Endpoints) int {
 	for _, sub := range e.Subsets {
 		num += len(sub.Addresses)
 	}
+
 	return num
 }
 
@@ -91,6 +96,7 @@ func LoadClientset() (*clientset.Clientset, error) {
 		kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
 		// use the current context in kubeconfig
 		var err error
+
 		config, err = kubeconfig.ClientConfig()
 		if err != nil {
 			return nil, err
@@ -115,6 +121,7 @@ func CreateTestNamespace(c kubernetes.Interface) (string, error) {
 	}
 
 	var err error
+
 	ns, err = c.CoreV1().Namespaces().Create(ns)
 	if err != nil {
 		return "", fmt.Errorf("unable to create namespace: %v", err)
@@ -127,6 +134,7 @@ func CreateTestNamespace(c kubernetes.Interface) (string, error) {
 func DeleteKubeNamespace(c kubernetes.Interface, namespace string) error {
 	grace := int64(0)
 	pb := metav1.DeletePropagationBackground
+
 	return c.CoreV1().Namespaces().Delete(namespace, &metav1.DeleteOptions{
 		GracePeriodSeconds: &grace,
 		PropagationPolicy:  &pb,
@@ -160,7 +168,7 @@ func CreateIngress(c kubernetes.Interface, ingress *v1beta1.Ingress) (*v1beta1.I
 
 func createIngressWithRetries(c kubernetes.Interface, namespace string, obj *v1beta1.Ingress) error {
 	if obj == nil {
-		return fmt.Errorf("Object provided to create is empty")
+		return fmt.Errorf("object provided to create is empty")
 	}
 
 	createFunc := func() (bool, error) {
@@ -176,7 +184,8 @@ func createIngressWithRetries(c kubernetes.Interface, namespace string, obj *v1b
 		if IsRetryableAPIError(err) {
 			return false, nil
 		}
-		return false, fmt.Errorf("Failed to create object with non-retriable error: %v", err)
+
+		return false, fmt.Errorf("failed to create object with non-retriable error: %v", err)
 	}
 
 	return retryWithExponentialBackOff(createFunc)
@@ -185,7 +194,8 @@ func createIngressWithRetries(c kubernetes.Interface, namespace string, obj *v1b
 // WaitForIngressAddress waits for the Ingress to acquire an address.
 func WaitForIngressAddress(c clientset.Interface, ns, ingName, class string, timeout time.Duration) (string, error) {
 	var address string
-	err := wait.PollImmediate(10*time.Second, timeout, func() (bool, error) {
+
+	err := wait.PollImmediate(IngressWaitInterval, timeout, func() (bool, error) {
 		ipOrNameList, err := getIngressAddress(c, ns, ingName, class)
 		if err != nil || len(ipOrNameList) == 0 {
 			if IsRetryableAPIError(err) {
@@ -210,10 +220,12 @@ func getIngressAddress(c clientset.Interface, ns, name, class string) ([]string,
 	}
 
 	var addresses []string
+
 	for _, a := range ing.Status.LoadBalancer.Ingress {
 		if a.IP != "" {
 			addresses = append(addresses, a.IP)
 		}
+
 		if a.Hostname != "" {
 			addresses = append(addresses, a.Hostname)
 		}
@@ -238,5 +250,6 @@ func retryWithExponentialBackOff(fn wait.ConditionFunc) error {
 		Jitter:   retryBackoffJitter,
 		Steps:    retryBackoffSteps,
 	}
+
 	return wait.ExponentialBackoff(backoff, fn)
 }

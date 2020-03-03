@@ -33,16 +33,16 @@ import (
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
 
-var (
-	godogFormat        string
-	godogTags          string
-	godogStopOnFailure bool
-	godogNoColors      bool
-	godogPaths         string
-	godogOutput        string
-)
+func TestMain(m *testing.M) {
+	var (
+		godogFormat        string
+		godogTags          string
+		godogStopOnFailure bool
+		godogNoColors      bool
+		godogPaths         string
+		godogOutput        string
+	)
 
-func parseFlags() {
 	flag.StringVar(&godogFormat, "format", "pretty", "Sets godog format to use")
 	flag.StringVar(&godogTags, "tags", "", "Tags for conformance test")
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
@@ -51,10 +51,6 @@ func parseFlags() {
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
 
 	flag.Parse()
-}
-
-func TestMain(m *testing.M) {
-	parseFlags()
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -64,17 +60,18 @@ func TestMain(m *testing.M) {
 	}
 
 	output := os.Stdout
+
 	if godogOutput != "" {
 		file, err := os.Create(godogOutput)
 		if err != nil {
 			klog.Fatal(err)
 		}
-		defer file.Close()
 
+		defer file.Close()
 		output = file
 	}
 
-	status := godog.RunWithOptions("conformance", func(s *godog.Suite) {
+	exitCode := godog.RunWithOptions("conformance", func(s *godog.Suite) {
 		defaultbackend.FeatureContext(s, kubeClient)
 		//withhost.FeatureContext(s, kubeClient)
 		//withouthost.FeatureContext(s, kubeClient)
@@ -87,23 +84,24 @@ func TestMain(m *testing.M) {
 		Output:        output,
 	})
 
-	if st := m.Run(); st > status {
-		status = st
+	if code := m.Run(); code > exitCode {
+		exitCode = code
 	}
 
-	os.Exit(m.Run())
+	os.Exit(exitCode)
 }
 
 func setupSuite() (*clientset.Clientset, error) {
 	c, err := utils.LoadClientset()
 	if err != nil {
-		return nil, fmt.Errorf("Error loading client: %v", err)
+		return nil, fmt.Errorf("error loading client: %v", err)
 	}
 
 	dc := c.DiscoveryClient
+
 	serverVersion, serverErr := dc.ServerVersion()
 	if serverErr != nil {
-		return nil, fmt.Errorf("Unexpected server error retrieving version: %v", serverErr)
+		return nil, fmt.Errorf("unexpected server error retrieving version: %v", serverErr)
 	}
 
 	if serverVersion != nil {

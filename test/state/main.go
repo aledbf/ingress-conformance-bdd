@@ -1,49 +1,54 @@
 package state
 
 import (
+	"io/ioutil"
 	"net/http"
 
 	v1beta1 "k8s.io/api/networking/v1beta1"
 )
 
-type HTTP struct {
-	Client *http.Client
-
-	URL         string
-	RequestBody interface{}
-
-	Response *http.Response
-}
-
 type Feature struct {
-	HTTP *HTTP
+	client *http.Client
 
-	Namespace string
+	ResponseBody    []byte
+	ResponseHeaders http.Header
 
-	objectReference *v1beta1.Ingress
-	address         string
+	StatusCode int
+
+	Ingress *v1beta1.Ingress
+	Address string
 }
 
-func New() *Feature {
+func New(client *http.Client) *Feature {
+	if client == nil {
+		client = &http.Client{}
+	}
+
 	return &Feature{
-		HTTP: &HTTP{
-			Client: &http.Client{},
-		},
+		client: client,
 	}
 }
 
-func (f *Feature) SetIngress(obj *v1beta1.Ingress) {
-	f.objectReference = obj
-}
+func (f *Feature) SendRequest(req *http.Request) error {
+	resp, err := f.client.Do(req)
+	if err != nil {
+		f.ResponseBody = nil
+		f.StatusCode = 0
+		f.ResponseHeaders = nil
 
-func (f *Feature) GetIngress() *v1beta1.Ingress {
-	return f.objectReference
-}
+		return err
+	}
 
-func (f *Feature) SetStatusAddress(address string) {
-	f.address = address
-}
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 
-func (f *Feature) GetStatusAddress() string {
-	return f.address
+	f.ResponseBody = bodyBytes
+	f.ResponseHeaders = resp.Header.Clone()
+	f.StatusCode = resp.StatusCode
+
+	defer resp.Body.Close()
+
+	return nil
 }

@@ -25,6 +25,7 @@ public class Main {
         configuration.setBuildNumber(buildNumber);
         configuration.addClassifications("Release", "1.19");
         configuration.setSortingMethod(SortingMethod.NATURAL);
+        configuration.addPresentationModes(PresentationMode.EXPAND_ALL_STEPS);
         configuration.setTrendsStatsFile(new File("/report-output/trends.json"));
 
         ReportBuilder reportBuilder = new ReportBuilder(jsonFiles, configuration);

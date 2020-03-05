@@ -141,6 +141,7 @@ func DeleteKubeNamespace(c kubernetes.Interface, namespace string) error {
 	})
 }
 
+// IsRetryableAPIError checks if an API error allows retries or not
 func IsRetryableAPIError(err error) bool {
 	// These errors may indicate a transient error that we can retry in tests.
 	if apierrs.IsInternalError(err) || apierrs.IsTimeout(err) || apierrs.IsServerTimeout(err) ||

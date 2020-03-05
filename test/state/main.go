@@ -7,7 +7,8 @@ import (
 	v1beta1 "k8s.io/api/networking/v1beta1"
 )
 
-type Feature struct {
+// Scenario holds state for a test scenario
+type Scenario struct {
 	client *http.Client
 
 	ResponseBody    []byte
@@ -19,17 +20,21 @@ type Feature struct {
 	Address string
 }
 
-func New(client *http.Client) *Feature {
+// New creates a new state to use in a test Scenario
+func New(client *http.Client) *Scenario {
 	if client == nil {
 		client = &http.Client{}
 	}
 
-	return &Feature{
+	return &Scenario{
 		client: client,
 	}
 }
 
-func (f *Feature) SendRequest(req *http.Request) error {
+// SendRequest sends an HTTP request and updates the
+// state. In case of an error, the HTTP state is
+// removed and returns an error.
+func (f *Scenario) SendRequest(req *http.Request) error {
 	resp, err := f.client.Do(req)
 	if err != nil {
 		f.ResponseBody = nil

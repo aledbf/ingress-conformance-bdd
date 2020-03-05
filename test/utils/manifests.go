@@ -10,12 +10,14 @@ import (
 )
 
 const (
+	// IngressClassKey indicates the class of an Ingress to be used
+	// when determining which controller should implement the Ingress
 	IngressClassKey = "kubernetes.io/ingress.class"
 
-	IngressFile               = "ing.yaml"
-	ReplicationControllerFile = "rc.yaml"
-	ServiceFile               = "svc.yaml"
-	SecretFile                = "secret.yaml"
+	ingressFile               = "ing.yaml"
+	replicationControllerFile = "rc.yaml"
+	serviceFile               = "svc.yaml"
+	secretFile                = "secret.yaml"
 )
 
 // CreateFromPath creates the Ingress and associated service/rc.
@@ -25,9 +27,9 @@ const (
 // If svcAnnotations is specified it will overwrite any annotations in svc.yaml
 func CreateFromPath(c clientset.Interface, manifestPath, ns string, ingAnnotations map[string]string, svcAnnotations map[string]string) error {
 	files := []string{
-		ReplicationControllerFile,
-		ServiceFile,
-		SecretFile,
+		replicationControllerFile,
+		serviceFile,
+		secretFile,
 	}
 
 	for _, file := range files {
@@ -58,8 +60,8 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string, ingAnnotatio
 		}
 	}
 
-	if exists := Exists(filepath.Join(manifestPath, SecretFile)); exists {
-		content, err := Read(filepath.Join(manifestPath, SecretFile))
+	if exists := Exists(filepath.Join(manifestPath, secretFile)); exists {
+		content, err := Read(filepath.Join(manifestPath, secretFile))
 		if err != nil {
 			return err
 		}
@@ -70,7 +72,7 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string, ingAnnotatio
 		}
 	}
 
-	ingress, err := manifest.IngressFromManifest(filepath.Join(manifestPath, IngressFile))
+	ingress, err := manifest.IngressFromManifest(filepath.Join(manifestPath, ingressFile))
 	if err != nil {
 		return err
 	}

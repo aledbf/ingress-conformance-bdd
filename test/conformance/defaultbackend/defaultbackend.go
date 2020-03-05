@@ -22,7 +22,7 @@ var (
 	namespace  string
 	kubeClient *kubernetes.Clientset
 
-	state *tstate.Feature
+	state *tstate.Scenario
 )
 
 const (
@@ -192,6 +192,7 @@ func (f *feature) withPath(arg1 string) error {
 	return godog.ErrPending
 }
 
+// FeatureContext adds steps to setup and verify tests
 func FeatureContext(s *godog.Suite, c *kubernetes.Clientset) {
 	kubeClient = c
 

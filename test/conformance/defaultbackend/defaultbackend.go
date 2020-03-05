@@ -16,14 +16,11 @@ import (
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
 
-type feature struct{}
-
-var (
-	namespace  string
+type feature struct {
 	kubeClient *kubernetes.Clientset
 
 	state *tstate.Scenario
-)
+}
 
 const (
 	minimumRowCount = 1
@@ -33,7 +30,7 @@ const (
 func (f *feature) aNewRandomNamespace() error {
 	var err error
 
-	namespace, err = utils.CreateTestNamespace(kubeClient)
+	f.state.Namespace, err = utils.CreateTestNamespace(f.kubeClient)
 	if err != nil {
 		return err
 	}
@@ -45,7 +42,7 @@ func (f *feature) anIngressIsCreatedWithHostAndNoBackend(host string) error {
 	ingSpec := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "defaultbackend",
-			Namespace: namespace,
+			Namespace: f.state.Namespace,
 		},
 		Spec: v1beta1.IngressSpec{
 			Rules: []v1beta1.IngressRule{
@@ -65,13 +62,13 @@ func (f *feature) anIngressIsCreatedWithHostAndNoBackend(host string) error {
 		},
 	}
 
-	state.Ingress = ingSpec
+	f.state.Ingress = ingSpec
 
 	return nil
 }
 
 func (f *feature) ingressCreationrrorMessageContains(expected string) error {
-	_, err := utils.CreateIngress(kubeClient, state.Ingress)
+	_, err := utils.CreateIngress(f.kubeClient, f.state.Ingress)
 	if err == nil {
 		return fmt.Errorf("expected an error creating an ingress without backend serviceName")
 	}
@@ -84,17 +81,17 @@ func (f *feature) ingressCreationrrorMessageContains(expected string) error {
 }
 
 func (f *feature) ingressStatusIPOrFQDN() error {
-	if state.Ingress == nil {
+	if f.state.Ingress == nil {
 		return fmt.Errorf("feature without Ingress associated")
 	}
 
-	address, err := utils.WaitForIngressAddress(kubeClient, namespace,
-		state.Ingress.GetName(), "", utils.WaitForIngressAddressTimeout)
+	address, err := utils.WaitForIngressAddress(f.kubeClient, f.state.Namespace,
+		f.state.Ingress.GetName(), "", utils.WaitForIngressAddressTimeout)
 	if err != nil {
 		return err
 	}
 
-	state.Address = address
+	f.state.Address = address
 
 	return nil
 }
@@ -119,7 +116,7 @@ func (f *feature) anIngressIsCreatedWithFoobarHostWithInvalidBackend(host string
 	ingSpec := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "defaultbackend",
-			Namespace: namespace,
+			Namespace: f.state.Namespace,
 		},
 		Spec: v1beta1.IngressSpec{
 			Rules: []v1beta1.IngressRule{
@@ -145,12 +142,12 @@ func (f *feature) anIngressIsCreatedWithFoobarHostWithInvalidBackend(host string
 
 	var err error
 
-	ingSpec, err = utils.CreateIngress(kubeClient, ingSpec)
+	ingSpec, err = utils.CreateIngress(f.kubeClient, ingSpec)
 	if err != nil {
 		return err
 	}
 
-	state.Ingress = ingSpec
+	f.state.Ingress = ingSpec
 
 	return nil
 }
@@ -169,19 +166,19 @@ func (f *feature) sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs(s
 		path := row.Cells[0].Value
 		method := row.Cells[1].Value
 
-		req, err := http.NewRequest(method, fmt.Sprintf("http://%v%v", state.Address, path), nil)
+		req, err := http.NewRequest(method, fmt.Sprintf("http://%v%v", f.state.Address, path), nil)
 		if err != nil {
 			return err
 		}
 
-		err = state.SendRequest(req)
+		err = f.state.SendRequest(req)
 		if err != nil {
 			return err
 		}
 
-		if statusCode != state.StatusCode {
+		if statusCode != f.state.StatusCode {
 			return fmt.Errorf("expected status code %v for path %v and method %v but %v was returned",
-				statusCode, path, method, state.StatusCode)
+				statusCode, path, method, f.state.StatusCode)
 		}
 	}
 
@@ -194,9 +191,9 @@ func (f *feature) withPath(arg1 string) error {
 
 // FeatureContext adds steps to setup and verify tests
 func FeatureContext(s *godog.Suite, c *kubernetes.Clientset) {
-	kubeClient = c
-
-	f := &feature{}
+	f := &feature{
+		kubeClient: c,
+	}
 
 	s.Step(`^a new random namespace$`, f.aNewRandomNamespace)
 	s.Step(`^creating an Ingress with host "([^"]*)" without backend serviceName$`,
@@ -215,12 +212,11 @@ func FeatureContext(s *godog.Suite, c *kubernetes.Clientset) {
 	s.Step(`^With path "([^"]*)"$`, f.withPath)
 
 	s.BeforeScenario(func(this interface{}) {
-		state = tstate.New(nil)
-		namespace = ""
+		f.state = tstate.New(nil)
 	})
 
 	s.AfterScenario(func(interface{}, error) {
 		// delete namespace an all the content
-		_ = utils.DeleteKubeNamespace(c, namespace)
+		_ = utils.DeleteKubeNamespace(c, f.state.Namespace)
 	})
 }

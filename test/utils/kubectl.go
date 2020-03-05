@@ -75,7 +75,7 @@ func (b KubectlBuilder) Exec() (string, error) {
 		if err != nil {
 			var rc = 127
 			if ee, ok := err.(*exec.ExitError); ok {
-				rc = int(ee.Sys().(syscall.WaitStatus).ExitStatus())
+				rc = ee.Sys().(syscall.WaitStatus).ExitStatus()
 			}
 
 			return "", uexec.CodeExitError{

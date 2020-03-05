@@ -16,6 +16,8 @@ type Scenario struct {
 
 	StatusCode int
 
+	Namespace string
+
 	Ingress *v1beta1.Ingress
 	Address string
 }

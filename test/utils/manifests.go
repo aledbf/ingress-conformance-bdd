@@ -25,7 +25,8 @@ const (
 // Optional: secret.yaml, ingAnnotations
 // If ingAnnotations is specified it will overwrite any annotations in ing.yaml
 // If svcAnnotations is specified it will overwrite any annotations in svc.yaml
-func CreateFromPath(c clientset.Interface, manifestPath, ns string, ingAnnotations map[string]string, svcAnnotations map[string]string) error {
+func CreateFromPath(c clientset.Interface, manifestPath, ns string,
+	ingAnnotations map[string]string, svcAnnotations map[string]string) error {
 	files := []string{
 		replicationControllerFile,
 		serviceFile,
@@ -51,9 +52,10 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string, ingAnnotatio
 		}
 
 		for _, svc := range svcList.Items {
-			svc.Annotations = svcAnnotations
+			s := &svc
+			s.Annotations = svcAnnotations
 
-			_, err = c.CoreV1().Services(ns).Update(&svc)
+			_, err = c.CoreV1().Services(ns).Update(s)
 			if err != nil {
 				return err
 			}

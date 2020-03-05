@@ -1,2 +1,2 @@
-// Package utils contains Kubernetes helpers to run tests agains a running cluster
+// Package utils contains Kubernetes helpers to run tests against a running cluster
 package utils

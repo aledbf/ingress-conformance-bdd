@@ -18,22 +18,25 @@ DOCKER_CLI_EXPERIMENTAL ?= enabled
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-test: ## Run conformance tests using 'go test' (local development)
+test: generate-bindata ## Run conformance tests using 'go test' (local development)
 	@go test
 
-build-image: build ## Build image to run conformance test suite
+build-image: generate-bindata ## Build image to run conformance test suite
 	@go test -c
 	@make -C images/conformance
 
 check-go-version:
 	@hack/check-go-version.sh
 
+generate-bindata:
+	@hack/generate-bindata.sh
+
 run-conformance: ## Run conformance tests using a pod
 	@mkdir -p "/tmp/results"
 	@RESULTS_DIR="/tmp/results" \
 	./images/conformance/run_e2e.sh
 
-build-report: ## Run tests and generate HTML report in directory
+build-report: generate-bindata ## Run tests and generate HTML report in directory
 	echo "Running go tests with cucumber output..."
 	go test --output-file "$(PWD)/reports/ingress-conformance.json" --format cucumber
 

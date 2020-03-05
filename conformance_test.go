@@ -19,17 +19,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/cucumber/godog"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
 	"github.com/aledbf/ingress-conformance-bdd/test/conformance/defaultbackend"
+	"github.com/aledbf/ingress-conformance-bdd/test/generated"
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
 
@@ -49,10 +48,7 @@ func TestMain(m *testing.M) {
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")
 	flag.StringVar(&godogPaths, "paths", "./features", "")
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
-
 	flag.Parse()
-
-	rand.Seed(time.Now().UnixNano())
 
 	kubeClient, err := setupSuite()
 	if err != nil {
@@ -71,10 +67,16 @@ func TestMain(m *testing.M) {
 		output = file
 	}
 
+	utils.AddFileSource(utils.BindataFileSource{
+		Asset:      generated.Asset,
+		AssetNames: generated.AssetNames,
+	})
+
 	exitCode := godog.RunWithOptions("conformance", func(s *godog.Suite) {
 		defaultbackend.FeatureContext(s, kubeClient)
 		//withhost.FeatureContext(s, kubeClient)
 		//withouthost.FeatureContext(s, kubeClient)
+		//tls.FeatureContext(s, kubeClient)
 	}, godog.Options{
 		Format:        godogFormat,
 		Paths:         strings.Split(godogPaths, ","),

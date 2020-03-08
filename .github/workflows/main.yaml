@@ -17,12 +17,7 @@ jobs:
 
       - name: Install ingress controller
         run: |
-          kubectl version
-
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/provider/baremetal/service-nodeport.yaml
-          echo "Configuring deployment..."
-          kubectl patch deployments -n ingress-nginx nginx-ingress-controller -p '{"spec":{"template":{"spec":{"containers":[{"name":"nginx-ingress-controller","ports":[{"containerPort":80,"hostPort":80},{"containerPort":443,"hostPort":443}]}],"nodeSelector":{"ingress-ready":"true"},"tolerations":[{"key":"node-role.kubernetes.io/master","operator":"Equal","effect":"NoSchedule"}]}}}}'
+          curl https://gist.github.com/aledbf/7e67bcb338fa6a1696eb5b101597224e | bash
 
       - name: Setup environment
         shell: bash
@@ -57,7 +52,6 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          export KUBECONFIG=go/src/github.com/${{ github.repository }}/.kubeconfig
           kubectl version
 
           cd go/src/github.com/${{ github.repository }}

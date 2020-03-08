@@ -3,7 +3,7 @@ module github.com/aledbf/ingress-conformance-bdd
 go 1.14
 
 require (
-	github.com/cucumber/godog v0.8.1
+	github.com/cucumber/godog v0.8.2-0.20200305224212-2e1454719ab3
 	k8s.io/api v0.17.3
 	k8s.io/apimachinery v0.17.3
 	k8s.io/client-go v0.17.3

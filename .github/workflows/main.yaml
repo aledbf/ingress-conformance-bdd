@@ -6,46 +6,71 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    env:
-      DOCKER_CLI_EXPERIMENTAL: enabled
 
     steps:
+      - name: Setup environment
+        shell: bash
+        run: |
+          echo "::set-env name=GOPATH::${{ github.workspace }}/go"
+          echo "::add-path::${{ github.workspace }}/go/bin"
 
-    - name: Setup environment
-      shell: bash
-      run: |
-        echo "::set-env name=GOPATH::${{ github.workspace }}/go"
-        echo "::add-path::${{ github.workspace }}/go/bin"
+      - name: Set up Go 1.14
+        uses: actions/setup-go@master
+        with:
+          go-version: 1.14
+        id: go
 
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: crazy-max/ghaction-docker-buildx@v1
-      with:
-        version: latest
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 1
+          path: go/src/github.com/${{ github.repository }}
 
-    - name: Available platforms
-      run: echo ${{ steps.buildx.outputs.platforms }}
+      - name: Go dependencies
+        run: |
+          go get -u github.com/jteeuwen/go-bindata/...
 
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Build
+        run: |
+          REGISTRY=kubernetes-sigs TAG=dev make build-image
 
-    - name: Set up Go 1.14
-      uses: actions/setup-go@master
-      with:
-        go-version: 1.14
-      id: go
+  test:
+    needs: build
+    name: Build
+    runs-on: ubuntu-latest
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@master
-      with:
-        fetch-depth: 1
-        path: go/src/github.com/${{ github.repository }}
+    steps:
+      - name: Setup environment
+        shell: bash
+        run: |
+          echo "::set-env name=GOPATH::${{ github.workspace }}/go"
+          echo "::add-path::${{ github.workspace }}/go/bin"
 
-    - name: Build
-      run: |
-        set -x
+      - name: Create Kubernetes cluster (kind)
+        uses: engineerd/setup-kind@v0.3.0
+        id: kind
+        with:
+          version: v0.7.0
 
-        cd $GOPATH/src/github.com/${{ github.repository }}
-        make build-image
+      - name: Install ingress controller
+        run: |
+          kubectl version
+
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/provider/baremetal/service-nodeport.yaml
+          #echo "Configuring deployment..."
+          #kubectl patch deployments -n ingress-nginx nginx-ingress-controller -p '{"spec":{"template":{"spec":{"containers":[{"name":"nginx-ingress-controller","ports":[{"containerPort":80,"hostPort":80},{"containerPort":443,"hostPort":443}]}],"nodeSelector":{"ingress-ready":"true"},"tolerations":[{"key":"node-role.kubernetes.io/master","operator":"Equal","effect":"NoSchedule"}]}}}}'
+
+      #- name: Run tests
+      #  shell: bash
+      #  run: |
+      #    kubectl run --rm \
+      #      --attach \
+      #      --restart=Never \
+      #      --generator=run-pod/v1 \
+      #      kubernetes-sigs/ingress-conformance:dev
+
+      - name: Run tests
+        shell: bash
+        run: |
+          ./ingress-conformance-bdd.test

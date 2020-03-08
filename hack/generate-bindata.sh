@@ -36,7 +36,7 @@ pushd "${KUBE_ROOT}" >/dev/null
 
 # These are files for e2e tests.
 BINDATA_OUTPUT="test/generated/bindata.go"
-go-bindata -nometadata -o "${BINDATA_OUTPUT}.tmp" -pkg generated \
+go-bindata -o "${BINDATA_OUTPUT}.tmp" -pkg generated \
 	"manifests/..." \
 	"features/..."
 

@@ -23,7 +23,7 @@ test: generate-bindata ## Run conformance tests using 'go test' (local developme
 
 build-image: generate-bindata ## Build image to run conformance test suite
 	@go test -c
-	@make -C images/conformance
+	@make -C images/conformance build
 
 check-go-version:
 	@hack/check-go-version.sh

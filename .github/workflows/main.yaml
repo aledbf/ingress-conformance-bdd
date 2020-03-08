@@ -20,23 +20,25 @@ jobs:
           go-version: 1.14
         id: go
 
+      - name: Go dependencies
+        run: |
+          go get -u github.com/jteeuwen/go-bindata/...
+
       - name: Check out code into the Go module directory
         uses: actions/checkout@master
         with:
           fetch-depth: 1
           path: go/src/github.com/${{ github.repository }}
 
-      - name: Go dependencies
-        run: |
-          go get -u github.com/jteeuwen/go-bindata/...
-
       - name: Build
+        shell: bash
         run: |
+          cd go/src/github.com/${{ github.repository }}
           REGISTRY=kubernetes-sigs TAG=dev make build-image
 
   test:
     needs: build
-    name: Build
+    name: Test
     runs-on: ubuntu-latest
 
     steps:
@@ -45,6 +47,12 @@ jobs:
         run: |
           echo "::set-env name=GOPATH::${{ github.workspace }}/go"
           echo "::add-path::${{ github.workspace }}/go/bin"
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 1
+          path: go/src/github.com/${{ github.repository }}
 
       - name: Create Kubernetes cluster (kind)
         uses: engineerd/setup-kind@v0.3.0
@@ -61,6 +69,15 @@ jobs:
           #echo "Configuring deployment..."
           #kubectl patch deployments -n ingress-nginx nginx-ingress-controller -p '{"spec":{"template":{"spec":{"containers":[{"name":"nginx-ingress-controller","ports":[{"containerPort":80,"hostPort":80},{"containerPort":443,"hostPort":443}]}],"nodeSelector":{"ingress-ready":"true"},"tolerations":[{"key":"node-role.kubernetes.io/master","operator":"Equal","effect":"NoSchedule"}]}}}}'
 
+      # Use go test
+      - name: Run tests
+        shell: bash
+        run: |
+          ls
+          find .
+          go test -v
+
+      # Use a pod
       #- name: Run tests
       #  shell: bash
       #  run: |
@@ -69,8 +86,3 @@ jobs:
       #      --restart=Never \
       #      --generator=run-pod/v1 \
       #      kubernetes-sigs/ingress-conformance:dev
-
-      - name: Run tests
-        shell: bash
-        run: |
-          ./ingress-conformance-bdd.test

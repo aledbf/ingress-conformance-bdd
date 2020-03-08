@@ -17,7 +17,9 @@ jobs:
 
       - name: Install ingress controller
         run: |
-          curl https://gist.github.com/aledbf/7e67bcb338fa6a1696eb5b101597224e | bash
+          # The secret points to the gist https://gist.github.com/aledbf/7e67bcb338fa6a1696eb5b101597224e
+          # easy to fork/change and test a different controller
+          curl ${{ secrets.INGRESS_CONTROLLER }} | bash
 
       - name: Setup environment
         shell: bash
@@ -52,8 +54,6 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          kubectl version
-
           cd go/src/github.com/${{ github.repository }}
 
           go mod download

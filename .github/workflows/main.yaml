@@ -3,9 +3,30 @@ on: [push]
 
 jobs:
 
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create Kubernetes cluster (kind)
+        uses: engineerd/setup-kind@v0.3.0
+        id: kind
+        with:
+          version: v0.7.0
+
+      - name: Install ingress controller
+        run: |
+          kubectl version
+
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/provider/baremetal/service-nodeport.yaml
+          #echo "Configuring deployment..."
+          #kubectl patch deployments -n ingress-nginx nginx-ingress-controller -p '{"spec":{"template":{"spec":{"containers":[{"name":"nginx-ingress-controller","ports":[{"containerPort":80,"hostPort":80},{"containerPort":443,"hostPort":443}]}],"nodeSelector":{"ingress-ready":"true"},"tolerations":[{"key":"node-role.kubernetes.io/master","operator":"Equal","effect":"NoSchedule"}]}}}}'
+
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: setup
 
     steps:
       - name: Setup environment
@@ -30,52 +51,13 @@ jobs:
           fetch-depth: 1
           path: go/src/github.com/${{ github.repository }}
 
-      - name: Build
-        shell: bash
-        run: |
-          cd go/src/github.com/${{ github.repository }}
-          REGISTRY=kubernetes-sigs TAG=dev make build-image
-
-  test:
-    needs: build
-    name: Test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Setup environment
-        shell: bash
-        run: |
-          echo "::set-env name=GOPATH::${{ github.workspace }}/go"
-          echo "::add-path::${{ github.workspace }}/go/bin"
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@master
-        with:
-          fetch-depth: 1
-          path: go/src/github.com/${{ github.repository }}
-
-      - name: Create Kubernetes cluster (kind)
-        uses: engineerd/setup-kind@v0.3.0
-        id: kind
-        with:
-          version: v0.7.0
-
-      - name: Install ingress controller
-        run: |
-          kubectl version
-
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/mandatory.yaml
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/nginx-0.30.0/deploy/static/provider/baremetal/service-nodeport.yaml
-          #echo "Configuring deployment..."
-          #kubectl patch deployments -n ingress-nginx nginx-ingress-controller -p '{"spec":{"template":{"spec":{"containers":[{"name":"nginx-ingress-controller","ports":[{"containerPort":80,"hostPort":80},{"containerPort":443,"hostPort":443}]}],"nodeSelector":{"ingress-ready":"true"},"tolerations":[{"key":"node-role.kubernetes.io/master","operator":"Equal","effect":"NoSchedule"}]}}}}'
-
       # Use go test
       - name: Run tests
         shell: bash
         run: |
-          ls
-          find .
-          go test -v
+          cd go/src/github.com/${{ github.repository }}
+          go mod download
+          make test
 
       # Use a pod
       #- name: Run tests

@@ -18,7 +18,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-kubectl create -f conformance-e2e.yaml
+kubectl create -f conformance.yaml
 while true; do
   STATUS=$(kubectl -n conformance get pods ingress -o jsonpath="{.status.phase}")
   timestamp=$(date +"[%H:%M:%S]")

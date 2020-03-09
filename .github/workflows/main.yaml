@@ -69,13 +69,15 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          kubectl get nodes
-
           kind load docker-image kubernetes-sigs/ingress-conformance:dev
+
+          kubectl apply -f go/src/github.com/${{ github.repository }}/images/conformance/conformance.yaml
 
           kubectl run conformance \
             --attach \
             --restart=Never \
             --generator=run-pod/v1 \
             --image-pull-policy=Never \
+            --namespace=conformance \
+            --overrides='{ "apiVersion": "v1", "spec":{"serviceAccountName": "conformance"}}' \
             --image=kubernetes-sigs/ingress-conformance:dev

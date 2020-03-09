@@ -78,7 +78,7 @@ $(document).ready(function() {
     <tr class="info">
       <td>Ingress Conformance Test</td>
         <td>1</td>
-      <td>09 Mar 2020, 19:56</td>
+      <td>09 Mar 2020, 20:24</td>
     </tr>
   </tbody>
 </table>
@@ -130,14 +130,14 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">10.015</span>
+  <span class="lead-duration duration">40.019</span>
 
 
   <span data-toggle="collapse" class=" collapsable-control" data-target="#element-1">
 
 <div class="brief failed">
   <span class="keyword indention">Scenario</span>
-  <span class="name">Ingress with valid host and path /test should return 404 for unmapped path &quot;/&quot;</span>
+  <span class="name">Ingress should return 404 for paths</span>
 
 
      <i class="chevron fa fa-fw"></i>
@@ -173,7 +173,241 @@ $(document).ready(function() {
   <span class="keyword indention">Given</span>
   <span class="name">a new random namespace</span>
 
-  <span class="lead-duration duration">0.001</span>
+  <span class="lead-duration duration">0.003</span>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+      <div class="step">
+
+
+<div class="brief step-name-And passed">
+  <span class="keyword indention">And</span>
+  <span class="name">an Ingress is created with host &quot;foo.bar&quot; with an invalid backend</span>
+
+  <span class="lead-duration duration">0.012</span>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+      <div class="step">
+
+
+<div class="brief step-name-When passed">
+  <span class="keyword indention">When</span>
+  <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
+
+  <span class="lead-duration duration">10.003</span>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+      <div class="step">
+
+
+<div class="brief step-name-And passed">
+  <span class="keyword indention">And</span>
+  <span class="name">Header &quot;Host&quot; with value &quot;foo.bar&quot;</span>
+
+  <span class="lead-duration duration">0.000</span>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+      <div class="step">
+
+
+<div class="brief step-name-Then failed">
+  <span class="keyword indention">Then</span>
+  <span class="name">Send HTTP request with &lt;path&gt; and &lt;method&gt; checking response status code is 404:</span>
+
+  <span class="lead-duration duration">30.000</span>
+
+</div>
+
+
+
+
+
+
+  <div class="inner-level">
+    <div class="message indention">
+      <div data-toggle="collapse" class=" collapsable-control" data-target="#msg-3">
+          <a>Get</a>
+      </div>
+      <div id="msg-3" class="collapse collapsable-details  in ">
+        <pre>Get &quot;http://10.96.26.248/test&quot;: dial tcp 10.96.26.248:80: i/o timeout</pre>
+      </div>
+    </div>
+  </div>
+
+
+          <table class="step-arguments">
+              <tr>
+                  <td>path</td>
+                  <td>method</td>
+              </tr>
+              <tr>
+                  <td>/test</td>
+                  <td>GET</td>
+              </tr>
+              <tr>
+                  <td>/</td>
+                  <td>POST</td>
+              </tr>
+              <tr>
+                  <td>/</td>
+                  <td>PUT</td>
+              </tr>
+              <tr>
+                  <td>/</td>
+                  <td>DELETE</td>
+              </tr>
+              <tr>
+                  <td>/</td>
+                  <td>GET</td>
+              </tr>
+          </table>
+
+
+
+
+
+
+
+
+
+      </div>
+  </div>
+</div>
+
+
+
+
+
+  </div>
+</div>
+
+
+<div class="element">
+    <div class="indention">
+      <b>Feature:</b>
+      <a href="report-feature_2022162379.html">Default backend</a>
+    </div>
+
+
+<div class="tags indention">
+    <b>Tags:</b>
+       <a href="report-tag_3645108465.html">@sig-network</a>
+       <a href="report-tag_3193701204.html">@conformance</a>
+       <a href="report-tag_2830925642.html">@release-1.19</a>
+</div>
+
+
+  <span class="lead-duration duration">10.021</span>
+
+
+  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-4">
+
+<div class="brief failed">
+  <span class="keyword indention">Scenario</span>
+  <span class="name">Ingress with valid host and path /test should return 404 for unmapped path &quot;/&quot;</span>
+
+
+     <i class="chevron fa fa-fw"></i>
+</div>
+
+  </span>
+  <div class="description indention"></div>
+
+  <div id="element-4" class="collapse collapsable-details  in ">
+
+
+
+
+
+<div class="steps inner-level">
+  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-5">
+
+<div class="brief failed">
+  <span class="keyword indention">Steps</span>
+  <span class="name"></span>
+
+
+     <i class="chevron fa fa-fw"></i>
+</div>
+
+  </div>
+
+  <div id="steps-5" class="inner-level collapse collapsable-details  in ">
+      <div class="step">
+
+
+<div class="brief step-name-Given passed">
+  <span class="keyword indention">Given</span>
+  <span class="name">a new random namespace</span>
+
+  <span class="lead-duration duration">0.002</span>
 
 </div>
 
@@ -227,7 +461,7 @@ $(document).ready(function() {
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">10.006</span>
+  <span class="lead-duration duration">10.011</span>
 
 </div>
 
@@ -411,7 +645,7 @@ $(document).ready(function() {
   <span class="lead-duration duration">0.002</span>
 
 
-  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-3">
+  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-6">
 
 <div class="brief failed">
   <span class="keyword indention">Scenario</span>
@@ -424,14 +658,14 @@ $(document).ready(function() {
   </span>
   <div class="description indention"></div>
 
-  <div id="element-3" class="collapse collapsable-details  in ">
+  <div id="element-6" class="collapse collapsable-details  in ">
 
 
 
 
 
 <div class="steps inner-level">
-  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-4">
+  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-7">
 
 <div class="brief failed">
   <span class="keyword indention">Steps</span>
@@ -443,7 +677,7 @@ $(document).ready(function() {
 
   </div>
 
-  <div id="steps-4" class="inner-level collapse collapsable-details  in ">
+  <div id="steps-7" class="inner-level collapse collapsable-details  in ">
       <div class="step">
 
 

@@ -41,14 +41,6 @@ jobs:
           restore-keys: |
             go-mod-
 
-      - name: Cache for maven dependencies
-        uses: actions/cache@v1.1.2
-        with:
-          path: ~/.m2
-          key: maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            maven-
-
       - name: Go dependencies
         run: |
           go get -u github.com/jteeuwen/go-bindata/...
@@ -100,7 +92,6 @@ jobs:
             --overrides='{ "apiVersion": "v1", "spec":{"serviceAccountName": "conformance"}}' \
             --image=kubernetes-sigs/ingress-conformance:dev
 
-
   reports:
     name: Build reports
     runs-on: ubuntu-latest
@@ -122,6 +113,14 @@ jobs:
         with:
           name: ingress-conformance.json
           path: reports
+
+      - name: Cache for maven dependencies
+        uses: actions/cache@v1.1.2
+        with:
+          path: ~/.m2
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-
 
       - name: Build report
         shell: bash

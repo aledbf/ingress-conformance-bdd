@@ -4,7 +4,7 @@ on: [push]
 jobs:
 
   build:
-    name: Build
+    name: Build and test
     runs-on: ubuntu-latest
 
     steps:
@@ -75,6 +75,11 @@ jobs:
           # TODO: fix "testing: warning: no tests to run"
           go test --output-file reports/ingress-conformance.json --format cucumber || true
 
+      - uses: actions/upload-artifact@v1
+        with:
+          name: ingress-conformance.json
+          path: reports/ingress-conformance.json
+
       # Check tests run as a pod
       - name: Run tests (pod)
         shell: bash
@@ -95,10 +100,23 @@ jobs:
             --overrides='{ "apiVersion": "v1", "spec":{"serviceAccountName": "conformance"}}' \
             --image=kubernetes-sigs/ingress-conformance:dev
 
+
+  reports:
+    name: Build reports
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+
       - name: Set up JDK 11 (required for reports)
         uses: actions/setup-java@v1
         with:
           java-version: 11
+
+      - uses: actions/download-artifact@v1
+        with:
+          name: ingress-conformance.json
+          path: reports
 
       - name: Build report
         shell: bash
@@ -112,8 +130,25 @@ jobs:
 
           cp ../output/cucumber-html-reports/overview-features.html ../output/cucumber-html-reports/index.html
 
+      - uses: actions/upload-artifact@v1
+        with:
+          name: reports
+          path: reports/output/cucumber-html-reports
+
+  gh-pages:
+    name: Update gh-pages
+    runs-on: ubuntu-latest
+    needs: reports
+
+    steps:
+
+      - uses: actions/download-artifact@v1
+        with:
+          name: reports
+          path: reports/output/cucumber-html-reports
+
       - name: Deploy report to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./reports/output/cucumber-html-reports
+          publish_dir: reports/output/cucumber-html-reports

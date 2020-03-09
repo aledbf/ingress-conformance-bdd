@@ -18,7 +18,7 @@ jobs:
       - name: Install ingress controller
         run: |
           # The secret points to the gist https://gist.github.com/aledbf/7e67bcb338fa6a1696eb5b101597224e
-          # easy to fork/change and test a different controller
+          # easy to fork/change and test a different controller.
           curl ${{ secrets.INGRESS_CONTROLLER }} | bash
 
       - name: Setup environment
@@ -37,7 +37,6 @@ jobs:
         uses: actions/checkout@master
         with:
           fetch-depth: 1
-          path: go/src/github.com/${{ github.repository }}
 
       - uses: actions/cache@v1
         with:
@@ -53,7 +52,6 @@ jobs:
       - name: Build image
         shell: bash
         run: |
-          cd go/src/github.com/${{ github.repository }}
           go mod download
           TAG=dev REGISTRY=kubernetes-sigs make build-image
 
@@ -71,7 +69,7 @@ jobs:
         run: |
           kind load docker-image kubernetes-sigs/ingress-conformance:dev
 
-          kubectl apply -f go/src/github.com/${{ github.repository }}/images/conformance/conformance.yaml
+          kubectl apply -f images/conformance/conformance.yaml
 
           kubectl run conformance \
             --attach \
@@ -85,7 +83,6 @@ jobs:
       - name: Build report
         shell: bash
         run: |
-          cd go/src/github.com/${{ github.repository }}
           make build-report
           cp reports/output/cucumber-html-reports/overview-features.html reports/output/cucumber-html-reports/index.html
 
@@ -93,4 +90,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: go/src/github.com/${{ github.repository }}/reports/output/cucumber-html-reports
+          publish_dir: ./reports/output/cucumber-html-reports

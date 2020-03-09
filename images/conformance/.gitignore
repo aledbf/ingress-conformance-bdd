@@ -1,2 +1,2 @@
-features
+features/*
 ingress-conformance-bdd.test

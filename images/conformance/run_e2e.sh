@@ -44,5 +44,5 @@ set -x
 /ingress-conformance-bdd.test -paths=/features # -format cucumber "${RESULTS_DIR}"/ingress-conformance.json
 ret=$?
 set -x
-saveResults
+#saveResults
 exit ${ret}

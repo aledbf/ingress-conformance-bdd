@@ -77,7 +77,7 @@ $(document).ready(function() {
     <tr class="info">
       <td>Ingress Conformance Test</td>
         <td>1</td>
-      <td>09 Mar 2020, 20:24</td>
+      <td>09 Mar 2020, 20:30</td>
     </tr>
   </tbody>
 </table>
@@ -130,18 +130,18 @@ $(document).ready(function() {
         <tbody>
         <tr>
           <td class="tagname">Default backend</td>
-          <td      class="passed"    >17</td>
-          <td      class="failed"    >1</td>
+          <td      class="passed"    >18</td>
+          <td >0</td>
           <td     class="skipped"   >4</td>
           <td     class="pending"   >1</td>
           <td >0</td>
           <td class="total">23</td>
 
-          <td  class="passed"    >2</td>
-          <td  class="failed"    >2</td>
+          <td  class="passed"    >3</td>
+          <td  class="failed"    >1</td>
           <td class="total">4</td>
 
-          <td class="duration" data-value="60067570108">1:0.067</td>
+          <td class="duration" data-value="25082889324">25.082</td>
           <td class="failed">Failed</td>
         </tr>
         </tbody>
@@ -209,7 +209,7 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">0.006</span>
+  <span class="lead-duration duration">0.011</span>
 
 
   <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-1">
@@ -252,7 +252,7 @@ $(document).ready(function() {
   <span class="keyword indention">Given</span>
   <span class="name">a new random namespace</span>
 
-  <span class="lead-duration duration">0.003</span>
+  <span class="lead-duration duration">0.007</span>
 
 </div>
 
@@ -306,7 +306,7 @@ $(document).ready(function() {
   <span class="keyword indention">Then</span>
   <span class="name">The error message contains &quot;http.backend.serviceName: Required value&quot;</span>
 
-  <span class="lead-duration duration">0.002</span>
+  <span class="lead-duration duration">0.004</span>
 
 </div>
 
@@ -348,7 +348,7 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">10.021</span>
+  <span class="lead-duration duration">5.032</span>
 
 
   <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-3">
@@ -418,7 +418,7 @@ $(document).ready(function() {
   <span class="keyword indention">And</span>
   <span class="name">an Ingress is created with host &quot;foo.bar&quot; with an invalid backend</span>
 
-  <span class="lead-duration duration">0.013</span>
+  <span class="lead-duration duration">0.012</span>
 
 </div>
 
@@ -445,7 +445,7 @@ $(document).ready(function() {
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">10.005</span>
+  <span class="lead-duration duration">5.018</span>
 
 </div>
 
@@ -595,12 +595,12 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">40.019</span>
+  <span class="lead-duration duration">10.023</span>
 
 
-  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-5">
+  <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-5">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Scenario</span>
   <span class="name">Ingress should return 404 for paths</span>
 
@@ -618,9 +618,9 @@ $(document).ready(function() {
 
 
 <div class="steps inner-level">
-  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-6">
+  <div data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#steps-6">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Steps</span>
   <span class="name"></span>
 
@@ -638,7 +638,7 @@ $(document).ready(function() {
   <span class="keyword indention">Given</span>
   <span class="name">a new random namespace</span>
 
-  <span class="lead-duration duration">0.003</span>
+  <span class="lead-duration duration">0.004</span>
 
 </div>
 
@@ -665,7 +665,7 @@ $(document).ready(function() {
   <span class="keyword indention">And</span>
   <span class="name">an Ingress is created with host &quot;foo.bar&quot; with an invalid backend</span>
 
-  <span class="lead-duration duration">0.012</span>
+  <span class="lead-duration duration">0.010</span>
 
 </div>
 
@@ -692,7 +692,7 @@ $(document).ready(function() {
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">10.003</span>
+  <span class="lead-duration duration">10.006</span>
 
 </div>
 
@@ -742,11 +742,11 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-Then failed">
+<div class="brief step-name-Then passed">
   <span class="keyword indention">Then</span>
   <span class="name">Send HTTP request with &lt;path&gt; and &lt;method&gt; checking response status code is 404:</span>
 
-  <span class="lead-duration duration">30.000</span>
+  <span class="lead-duration duration">0.001</span>
 
 </div>
 
@@ -754,17 +754,6 @@ $(document).ready(function() {
 
 
 
-
-  <div class="inner-level">
-    <div class="message indention">
-      <div data-toggle="collapse" class=" collapsable-control" data-target="#msg-7">
-          <a>Get</a>
-      </div>
-      <div id="msg-7" class="collapse collapsable-details  in ">
-        <pre>Get &quot;http://10.96.26.248/test&quot;: dial tcp 10.96.26.248:80: i/o timeout</pre>
-      </div>
-    </div>
-  </div>
 
 
           <table class="step-arguments">
@@ -825,10 +814,10 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">10.021</span>
+  <span class="lead-duration duration">10.014</span>
 
 
-  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-8">
+  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-7">
 
 <div class="brief failed">
   <span class="keyword indention">Scenario</span>
@@ -841,14 +830,14 @@ $(document).ready(function() {
   </span>
   <div class="description indention"></div>
 
-  <div id="element-8" class="collapse collapsable-details  in ">
+  <div id="element-7" class="collapse collapsable-details  in ">
 
 
 
 
 
 <div class="steps inner-level">
-  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-9">
+  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-8">
 
 <div class="brief failed">
   <span class="keyword indention">Steps</span>
@@ -860,7 +849,7 @@ $(document).ready(function() {
 
   </div>
 
-  <div id="steps-9" class="inner-level collapse collapsable-details  in ">
+  <div id="steps-8" class="inner-level collapse collapsable-details  in ">
       <div class="step">
 
 
@@ -922,7 +911,7 @@ $(document).ready(function() {
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">10.011</span>
+  <span class="lead-duration duration">10.004</span>
 
 </div>
 

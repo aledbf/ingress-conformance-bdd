@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 
+	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	clientset "k8s.io/client-go/kubernetes"
-	"k8s.io/kubernetes/test/e2e/manifest"
+	"k8s.io/kubectl/pkg/scheme"
 )
 
 const (
@@ -74,7 +77,7 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string,
 		}
 	}
 
-	ingress, err := manifest.IngressFromManifest(filepath.Join(manifestPath, ingressFile))
+	ingress, err := IngressFromManifest(filepath.Join(manifestPath, ingressFile))
 	if err != nil {
 		return err
 	}
@@ -94,4 +97,22 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string,
 	}
 
 	return nil
+}
+
+// IngressFromManifest reads a .json/yaml file and returns the ingress in it.
+func IngressFromManifest(fileName string) (*networkingv1beta1.Ingress, error) {
+	var ing networkingv1beta1.Ingress
+	data, err := Read(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	json, err := utilyaml.ToJSON(data)
+	if err != nil {
+		return nil, err
+	}
+	if err := runtime.DecodeInto(scheme.Codecs.UniversalDecoder(), json, &ing); err != nil {
+		return nil, err
+	}
+	return &ing, nil
 }

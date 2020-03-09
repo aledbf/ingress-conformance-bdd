@@ -13,10 +13,19 @@ import net.masterthought.cucumber.sorting.SortingMethod;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        File reportOutputDirectory = new File("/report-output");
+        String outputDirectory = System.getenv("OUTPUT_DIRECTORY");
+        if (outputDirectory == null) {
+            outputDirectory = "/report-output";
+        }
+        File reportOutputDirectory = new File(outputDirectory);
+
+        String inputJSON = System.getenv("INPUT_JSON");
+        if (inputJSON == null) {
+            inputJSON = "/input.json";
+        }
 
         List<String> jsonFiles = new ArrayList<>();
-        jsonFiles.add("/input.json");
+        jsonFiles.add(inputJSON);
 
         String buildNumber = "1";
         String projectName = "Ingress Conformance Test";
@@ -26,7 +35,13 @@ public class Main {
         configuration.addClassifications("Release", "1.19");
         configuration.setSortingMethod(SortingMethod.NATURAL);
         configuration.addPresentationModes(PresentationMode.EXPAND_ALL_STEPS);
-        configuration.setTrendsStatsFile(new File("/report-output/trends.json"));
+
+        String trendJSON = System.getenv("TREND_JSON");
+        if (trendJSON == null) {
+            trendJSON = "/report-output/trends.json";
+        }
+
+        configuration.setTrendsStatsFile(new File(trendJSON));
 
         ReportBuilder reportBuilder = new ReportBuilder(jsonFiles, configuration);
         reportBuilder.generateReports();

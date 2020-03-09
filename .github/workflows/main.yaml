@@ -54,27 +54,33 @@ jobs:
         run: |
           go mod download
 
-      - name: Build image
+      - name: Build container image
         shell: bash
         run: |
-          TAG=dev REGISTRY=kubernetes-sigs make build-image
+          # use a local image
+          export TAG=dev
+          export REGISTRY=kubernetes-sigs
+
+          make build-image
 
       # Use go test
-      #- name: Run tests
-      #  shell: bash
-      #  run: |
-      #    cd go/src/github.com/${{ github.repository }}
-      #    go mod download
-      #    make test
-
-      # Use a pod
       - name: Run tests
         shell: bash
         run: |
+          # TODO: fix "testing: warning: no tests to run"
+          go test --output-file reports/ingress-conformance.json --format cucumber || true
+
+      # Check tests run as a pod
+      - name: Run tests
+        shell: bash
+        run: |
+          echo "Loading test image to kind cluster..."
           kind load docker-image kubernetes-sigs/ingress-conformance:dev
 
+          echo "Creating service account with privileges to create resources..."
           kubectl apply -f images/conformance/conformance.yaml
 
+          echo "Running tests using a pod..."
           kubectl run conformance \
             --attach \
             --restart=Never \
@@ -84,10 +90,7 @@ jobs:
             --overrides='{ "apiVersion": "v1", "spec":{"serviceAccountName": "conformance"}}' \
             --image=kubernetes-sigs/ingress-conformance:dev
 
-          # TODO: fix "testing: warning: no tests to run"
-          go test --output-file reports/ingress-conformance.json --format cucumber || true
-
-      - name: Set up JDK 11
+      - name: Set up JDK 11 (required for reports)
         uses: actions/setup-java@v1
         with:
           java-version: 11

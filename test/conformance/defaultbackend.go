@@ -1,4 +1,4 @@
-package defaultbackend
+package conformance
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
 
-type feature struct {
+type defaultbackend struct {
 	kubeClient *kubernetes.Clientset
 
 	state *tstate.Scenario
@@ -27,7 +27,7 @@ const (
 	httpPort        = 80
 )
 
-func (f *feature) aNewRandomNamespace() error {
+func (f *defaultbackend) aNewRandomNamespace() error {
 	var err error
 
 	f.state.Namespace, err = utils.CreateTestNamespace(f.kubeClient)
@@ -38,7 +38,7 @@ func (f *feature) aNewRandomNamespace() error {
 	return nil
 }
 
-func (f *feature) anIngressIsCreatedWithHostAndNoBackend(host string) error {
+func (f *defaultbackend) anIngressIsCreatedWithHostAndNoBackend(host string) error {
 	ingSpec := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "defaultbackend",
@@ -67,7 +67,7 @@ func (f *feature) anIngressIsCreatedWithHostAndNoBackend(host string) error {
 	return nil
 }
 
-func (f *feature) ingressCreationrrorMessageContains(expected string) error {
+func (f *defaultbackend) ingressCreationrrorMessageContains(expected string) error {
 	_, err := utils.CreateIngress(f.kubeClient, f.state.Ingress)
 	if err == nil {
 		return fmt.Errorf("expected an error creating an ingress without backend serviceName")
@@ -80,7 +80,7 @@ func (f *feature) ingressCreationrrorMessageContains(expected string) error {
 	return fmt.Errorf("expected an error containing %v but returned %v", expected, err.Error())
 }
 
-func (f *feature) ingressStatusIPOrFQDN() error {
+func (f *defaultbackend) ingressStatusIPOrFQDN() error {
 	if f.state.Ingress == nil {
 		return fmt.Errorf("feature without Ingress associated")
 	}
@@ -96,23 +96,23 @@ func (f *feature) ingressStatusIPOrFQDN() error {
 	return nil
 }
 
-func (f *feature) headerWithValue(arg1, arg2 string) error {
+func (f *defaultbackend) headerWithValue(arg1, arg2 string) error {
 	return nil
 }
 
-func (f *feature) sendHTTPRequestWithMethod(arg1 string) error {
+func (f *defaultbackend) sendHTTPRequestWithMethod(arg1 string) error {
 	return nil
 }
 
-func (f *feature) responseStatusCodeIs(arg1 int) error {
+func (f *defaultbackend) responseStatusCodeIs(arg1 int) error {
 	return nil
 }
 
-func (f *feature) headerIs(arg1, arg2 string) error {
+func (f *defaultbackend) headerIs(arg1, arg2 string) error {
 	return nil
 }
 
-func (f *feature) anIngressIsCreatedWithFoobarHostWithInvalidBackend(host string) error {
+func (f *defaultbackend) anIngressIsCreatedWithFoobarHostWithInvalidBackend(host string) error {
 	ingSpec := &v1beta1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "defaultbackend",
@@ -152,7 +152,7 @@ func (f *feature) anIngressIsCreatedWithFoobarHostWithInvalidBackend(host string
 	return nil
 }
 
-func (f *feature) sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs(statusCode int,
+func (f *defaultbackend) sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs(statusCode int,
 	testTable *gherkin.DataTable) error {
 	if len(testTable.Rows) < minimumRowCount {
 		return fmt.Errorf("expected a table with at least one row")
@@ -185,13 +185,13 @@ func (f *feature) sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs(s
 	return nil
 }
 
-func (f *feature) withPath(arg1 string) error {
+func (f *defaultbackend) withPath(arg1 string) error {
 	return godog.ErrPending
 }
 
-// FeatureContext adds steps to setup and verify tests
-func FeatureContext(s *godog.Suite, c *kubernetes.Clientset) {
-	f := &feature{
+// DefaultBackendContext adds steps to setup and verify tests
+func DefaultBackendContext(s *godog.Suite, c *kubernetes.Clientset) {
+	f := &defaultbackend{
 		kubeClient: c,
 	}
 

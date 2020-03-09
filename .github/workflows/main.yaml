@@ -39,12 +39,21 @@ jobs:
           go-version: 1.14
         id: go
 
-      - uses: actions/cache@v1
+      - name: Cache for go dependencies
+        uses: actions/cache@v1.1.2
         with:
           path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: go-mod-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            go-mod-
+
+      - name: Cache for maven dependencies
+        uses: actions/cache@v1.1.2
+        with:
+          path: ~/.m2
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            maven-
 
       - name: Go dependencies
         run: |
@@ -53,6 +62,7 @@ jobs:
       - name: Go modules
         run: |
           go mod download
+          find go
 
       - name: Build container image
         shell: bash

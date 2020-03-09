@@ -64,8 +64,7 @@ jobs:
       - name: Run tests (go test)
         shell: bash
         run: |
-          # TODO: fix "testing: warning: no tests to run"
-          go test --output-file reports/ingress-conformance.json --format cucumber || true
+          go test --output-file reports/ingress-conformance.json --format cucumber
 
       - uses: actions/upload-artifact@v1
         with:

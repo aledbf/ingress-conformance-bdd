@@ -69,10 +69,13 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
+          kubectl get nodes
+
           kind load docker-image kubernetes-sigs/ingress-conformance:dev
 
           kubectl run conformance \
             --attach \
             --restart=Never \
             --generator=run-pod/v1 \
+            --image-pull-policy=Never \
             --image=kubernetes-sigs/ingress-conformance:dev

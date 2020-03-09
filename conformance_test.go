@@ -27,21 +27,28 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
-	"github.com/aledbf/ingress-conformance-bdd/test/conformance/defaultbackend"
+	"github.com/aledbf/ingress-conformance-bdd/test/conformance"
 	"github.com/aledbf/ingress-conformance-bdd/test/generated"
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
 
-func TestMain(m *testing.M) {
-	var (
-		godogFormat        string
-		godogTags          string
-		godogStopOnFailure bool
-		godogNoColors      bool
-		godogPaths         string
-		godogOutput        string
-	)
+var (
+	exitCode   int
+	kubeClient *clientset.Clientset
 
+	output = os.Stdout
+)
+
+var (
+	godogFormat        string
+	godogTags          string
+	godogStopOnFailure bool
+	godogNoColors      bool
+	godogPaths         string
+	godogOutput        string
+)
+
+func TestMain(m *testing.M) {
 	flag.StringVar(&godogFormat, "format", "pretty", "Sets godog format to use")
 	flag.StringVar(&godogTags, "tags", "", "Tags for conformance test")
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
@@ -50,12 +57,11 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
 	flag.Parse()
 
-	kubeClient, err := setupSuite()
+	var err error
+	kubeClient, err = setupSuite()
 	if err != nil {
 		klog.Fatal(err)
 	}
-
-	output := os.Stdout
 
 	if godogOutput != "" {
 		file, err := os.Create(godogOutput)
@@ -70,20 +76,6 @@ func TestMain(m *testing.M) {
 	utils.AddFileSource(utils.BindataFileSource{
 		Asset:      generated.Asset,
 		AssetNames: generated.AssetNames,
-	})
-
-	exitCode := godog.RunWithOptions("conformance", func(s *godog.Suite) {
-		defaultbackend.FeatureContext(s, kubeClient)
-		//withhost.FeatureContext(s, kubeClient)
-		//withouthost.FeatureContext(s, kubeClient)
-		//tls.FeatureContext(s, kubeClient)
-	}, godog.Options{
-		Format:        godogFormat,
-		Paths:         strings.Split(godogPaths, ","),
-		Tags:          godogTags,
-		StopOnFailure: godogStopOnFailure,
-		NoColors:      godogNoColors,
-		Output:        output,
 	})
 
 	if code := m.Run(); code > exitCode {
@@ -111,4 +103,22 @@ func setupSuite() (*clientset.Clientset, error) {
 	}
 
 	return c, nil
+}
+
+func TestSuite(t *testing.T) {
+	exitCode += godog.RunWithOptions("conformance", func(s *godog.Suite) {
+		conformance.DefaultBackendContext(s, kubeClient)
+		conformance.WithoutHostContext(s, kubeClient)
+	}, godog.Options{
+		Format:        godogFormat,
+		Paths:         strings.Split(godogPaths, ","),
+		Tags:          godogTags,
+		StopOnFailure: godogStopOnFailure,
+		NoColors:      godogNoColors,
+		Output:        output,
+	})
+
+	if exitCode != 0 {
+		t.Error("Error encountered running the test suite")
+	}
 }

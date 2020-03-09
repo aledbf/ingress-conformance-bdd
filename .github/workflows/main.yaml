@@ -27,12 +27,6 @@ jobs:
           # easy to fork/change and test a different controller.
           curl -sSL ${{ secrets.INGRESS_CONTROLLER }} | bash
 
-      - name: Setup environment
-        shell: bash
-        run: |
-          echo "::set-env name=GOPATH::${{ github.workspace }}/go"
-          echo "::add-path::${{ github.workspace }}/go/bin"
-
       - name: Set up Go 1.14
         uses: actions/setup-go@master
         with:
@@ -62,11 +56,12 @@ jobs:
       - name: Go modules
         run: |
           go mod download
-          find go
 
       - name: Build container image
         shell: bash
         run: |
+          export PATH=${PATH}:`go env GOPATH`/bin
+
           # use a local image
           export TAG=dev
           export REGISTRY=kubernetes-sigs
@@ -74,14 +69,14 @@ jobs:
           make build-image
 
       # Use go test
-      - name: Run tests
+      - name: Run tests (go test)
         shell: bash
         run: |
           # TODO: fix "testing: warning: no tests to run"
           go test --output-file reports/ingress-conformance.json --format cucumber || true
 
       # Check tests run as a pod
-      - name: Run tests
+      - name: Run tests (pod)
         shell: bash
         run: |
           echo "Loading test image to kind cluster..."

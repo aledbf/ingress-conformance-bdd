@@ -69,6 +69,8 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
+          kind load docker-image kubernetes-sigs/ingress-conformance:dev
+
           kubectl run conformance \
             --attach \
             --restart=Never \

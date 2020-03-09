@@ -13,7 +13,7 @@ ifndef VERBOSE
 .SILENT:
 endif
 
-DOCKER_CLI_EXPERIMENTAL ?= enabled
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -38,15 +38,15 @@ run-conformance: ## Run conformance tests using a pod
 
 build-report: generate-bindata ## Run tests and generate HTML report in directory
 	echo "Running go tests with cucumber output..."
-	go test --output-file "$(PWD)/reports/ingress-conformance.json" --format cucumber
+	go test -v --output-file "$(ROOT_DIR)/reports/ingress-conformance.json" --format cucumber
 
 	echo "Generating report..."
 	@docker run --rm \
 		--name build-report \
-		-v "$(PWD)/reports/build":/usr/src/conformance \
-		-v "$(PWD)/.m2":/var/maven/.m2 \
-		-v "$(PWD)/reports/output":/report-output:rw \
-		-v "$(PWD)/reports/ingress-conformance.json":/input.json:ro \
+		-v "$(ROOT_DIR)/reports/build":/usr/src/conformance \
+		-v "$(ROOT_DIR)/.m2":/var/maven/.m2 \
+		-v "$(ROOT_DIR)/reports/output":/report-output:rw \
+		-v "$(ROOT_DIR)/reports/ingress-conformance.json":/input.json:ro \
 		-w /usr/src/conformance \
 		-e MAVEN_CONFIG=/var/maven/.m2 \
 		-u $(shell id -u):$(shell id -g) \

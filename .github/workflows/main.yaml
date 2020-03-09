@@ -50,21 +50,27 @@ jobs:
         run: |
           go get -u github.com/jteeuwen/go-bindata/...
 
-      # Use go test
-      - name: Run tests
+      - name: Build image
         shell: bash
         run: |
           cd go/src/github.com/${{ github.repository }}
-
           go mod download
-          make test
+          TAG=dev REGISTRY=kubernetes-sigs make build-image
 
-      # Use a pod
+      # Use go test
       #- name: Run tests
       #  shell: bash
       #  run: |
-      #    kubectl run --rm \
-      #      --attach \
-      #      --restart=Never \
-      #      --generator=run-pod/v1 \
-      #      kubernetes-sigs/ingress-conformance:dev
+      #    cd go/src/github.com/${{ github.repository }}
+      #    go mod download
+      #    make test
+
+      # Use a pod
+      - name: Run tests
+        shell: bash
+        run: |
+          kubectl run --rm \
+            --attach \
+            --restart=Never \
+            --generator=run-pod/v1 \
+            kubernetes-sigs/ingress-conformance:dev

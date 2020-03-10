@@ -41,10 +41,6 @@ jobs:
           restore-keys: |
             go-mod-
 
-      - name: Go dependencies
-        run: |
-          go get -u github.com/jteeuwen/go-bindata/...
-
       - name: Go modules
         run: |
           go mod download

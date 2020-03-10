@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -28,7 +29,6 @@ import (
 	"k8s.io/klog"
 
 	"github.com/aledbf/ingress-conformance-bdd/test/conformance"
-	"github.com/aledbf/ingress-conformance-bdd/test/generated"
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
 
@@ -44,8 +44,10 @@ var (
 	godogTags          string
 	godogStopOnFailure bool
 	godogNoColors      bool
-	godogPaths         string
+	godogFeatures      string
 	godogOutput        string
+
+	manifests string
 )
 
 func TestMain(m *testing.M) {
@@ -53,7 +55,8 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&godogTags, "tags", "", "Tags for conformance test")
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")
-	flag.StringVar(&godogPaths, "paths", "./features", "")
+	flag.StringVar(&godogFeatures, "features", "./features", "Directory or individual files with extension .feature to run")
+	flag.StringVar(&manifests, "manifests-directory", "./manifests", "Directory where manifests for test applications or scenerarios are located")
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
 	flag.Parse()
 
@@ -73,9 +76,22 @@ func TestMain(m *testing.M) {
 		output = file
 	}
 
-	utils.AddFileSource(utils.BindataFileSource{
-		Asset:      generated.Asset,
-		AssetNames: generated.AssetNames,
+	manifestsPath, err := filepath.Abs(manifests)
+	if err != nil {
+		klog.Fatal(err)
+	}
+
+	info, err := os.Stat(manifestsPath)
+	if err != nil {
+		klog.Fatal(err)
+	}
+
+	if !info.IsDir() {
+		klog.Fatalf("The specified value in the flag --manifests-directory (%v) is not a directory", manifests)
+	}
+
+	utils.AddFileSource(utils.RootFileSource{
+		Root: manifestsPath,
 	})
 
 	if code := m.Run(); code > exitCode {
@@ -111,7 +127,7 @@ func TestSuite(t *testing.T) {
 		conformance.WithoutHostContext(s, kubeClient)
 	}, godog.Options{
 		Format:        godogFormat,
-		Paths:         strings.Split(godogPaths, ","),
+		Paths:         strings.Split(godogFeatures, ","),
 		Tags:          godogTags,
 		StopOnFailure: godogStopOnFailure,
 		NoColors:      godogNoColors,

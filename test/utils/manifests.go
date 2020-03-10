@@ -25,7 +25,7 @@ const (
 
 // CreateFromPath creates the Ingress and associated service/rc.
 // Required: ing.yaml, rc.yaml, svc.yaml must exist in manifestPath
-// Optional: secret.yaml, ingAnnotations
+// Optional: secret.yaml, ingAnnotations, svcAnnotations
 // If ingAnnotations is specified it will overwrite any annotations in ing.yaml
 // If svcAnnotations is specified it will overwrite any annotations in svc.yaml
 func CreateFromPath(c clientset.Interface, manifestPath, ns string,
@@ -33,16 +33,11 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string,
 	files := []string{
 		replicationControllerFile,
 		serviceFile,
-		secretFile,
+		ingressFile,
 	}
 
 	for _, file := range files {
-		content, err := Read(filepath.Join(manifestPath, file))
-		if err != nil {
-			return err
-		}
-
-		_, err = RunKubectlInput(ns, string(content), "create", "-f", "-", fmt.Sprintf("--namespace=%v", ns))
+		err := createFromFile(filepath.Join(manifestPath, file), ns)
 		if err != nil {
 			return err
 		}
@@ -77,32 +72,41 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string,
 		}
 	}
 
-	ingress, err := IngressFromManifest(filepath.Join(manifestPath, ingressFile))
-	if err != nil {
-		return err
-	}
+	if len(ingAnnotations) > 0 {
+		ingList, err := c.NetworkingV1beta1().Ingresses(ns).List(metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
 
-	ingress.Namespace = ns
-	ingress.Annotations = map[string]string{
-		IngressClassKey: "",
-	}
+		for _, ing := range ingList.Items {
+			i := &ing
+			i.Annotations = ingAnnotations
 
-	for k, v := range ingAnnotations {
-		ingress.Annotations[k] = v
-	}
-
-	_, err = CreateIngress(c, ingress)
-	if err != nil {
-		return err
+			_, err = c.NetworkingV1beta1().Ingresses(ns).Update(i)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
 }
 
+func createFromFile(file, ns string) error {
+	content, err := Read(file)
+	if err != nil {
+		return err
+	}
+
+	_, err = RunKubectlInput(ns, string(content), "create", "-f", "-", fmt.Sprintf("--namespace=%v", ns))
+	return err
+}
+
 // IngressFromManifest reads a .json/yaml file and returns the ingress in it.
-func IngressFromManifest(fileName string) (*networkingv1beta1.Ingress, error) {
+func IngressFromManifest(file, namespace string) (*networkingv1beta1.Ingress, error) {
 	var ing networkingv1beta1.Ingress
-	data, err := Read(fileName)
+
+	data, err := Read(file)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +115,12 @@ func IngressFromManifest(fileName string) (*networkingv1beta1.Ingress, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if err := runtime.DecodeInto(scheme.Codecs.UniversalDecoder(), json, &ing); err != nil {
 		return nil, err
 	}
+
+	ing.Namespace = namespace
+
 	return &ing, nil
 }

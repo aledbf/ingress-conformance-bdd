@@ -1,0 +1,13 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: defaultbackend
+spec:
+  rules:
+  - host: foo.bar
+    http:
+      paths:
+      - backend:
+          serviceName: non-existing
+          servicePort: 80
+        path: /

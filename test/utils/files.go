@@ -23,8 +23,10 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"sort"
-	"strings"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
 )
 
 var filesources []FileSource
@@ -104,36 +106,42 @@ func Exists(filePath string) bool {
 	return false
 }
 
-// BindataFileSource handles files stored in a package generated with bindata.
-type BindataFileSource struct {
-	Asset      func(string) ([]byte, error)
-	AssetNames func() []string
+// RootFileSource looks for files relative to a root directory.
+type RootFileSource struct {
+	Root string
 }
 
-// ReadTestFile looks for an asset with the given path.
-func (b BindataFileSource) ReadTestFile(filePath string) ([]byte, error) {
-	fileBytes, err := b.Asset(filePath)
-	if err != nil {
-		// It would be nice to have a better way to detect
-		// "not found" errors :-/
-		if strings.HasSuffix(err.Error(), "not found") {
-			return nil, nil
-		}
+// ReadTestFile looks for the file relative to the configured
+// root directory. If the path is already absolute, for example
+// in a test that has its own method of determining where
+// files are, then the path will be used directly.
+func (r RootFileSource) ReadTestFile(filePath string) ([]byte, error) {
+	var fullPath string
 
+	if path.IsAbs(filePath) {
+		fullPath = filePath
+	} else {
+		fullPath = filepath.Join(r.Root, filePath)
+	}
+
+	data, err := ioutil.ReadFile(fullPath)
+	if os.IsNotExist(err) {
 		return nil, err
 	}
 
-	return fileBytes, nil
+	return data, err
 }
 
-// DescribeFiles explains about gobindata and then lists all available files.
-func (b BindataFileSource) DescribeFiles() string {
-	var lines []string
-	lines = append(lines, "The following files are built into the test executable via gobindata.")
-	assets := b.AssetNames()
-	sort.Strings(assets)
-	lines = append(lines, assets...)
-	description := strings.Join(lines, "\n   ")
-
+// DescribeFiles explains that it looks for files inside a certain
+// root directory.
+func (r RootFileSource) DescribeFiles() string {
+	description := fmt.Sprintf("Test files are expected in %q", r.Root)
+	if !path.IsAbs(r.Root) {
+		abs, err := filepath.Abs(r.Root)
+		if err == nil {
+			description += fmt.Sprintf(" = %q", abs)
+		}
+	}
+	description += "."
 	return description
 }

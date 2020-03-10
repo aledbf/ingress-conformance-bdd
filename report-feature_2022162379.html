@@ -77,7 +77,7 @@ $(document).ready(function() {
     <tr class="info">
       <td>Ingress Conformance Test</td>
         <td>1</td>
-      <td>09 Mar 2020, 20:37</td>
+      <td>10 Mar 2020, 19:49</td>
     </tr>
   </tbody>
 </table>
@@ -130,18 +130,18 @@ $(document).ready(function() {
         <tbody>
         <tr>
           <td class="tagname">Default backend</td>
-          <td      class="passed"    >18</td>
+          <td      class="passed"    >21</td>
           <td >0</td>
           <td     class="skipped"   >4</td>
           <td     class="pending"   >1</td>
           <td >0</td>
-          <td class="total">23</td>
+          <td class="total">26</td>
 
           <td  class="passed"    >3</td>
           <td  class="failed"    >1</td>
           <td class="total">4</td>
 
-          <td class="duration" data-value="25062196732">25.062</td>
+          <td class="duration" data-value="30083719222">30.083</td>
           <td class="failed">Failed</td>
         </tr>
         </tbody>
@@ -209,14 +209,14 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">0.008</span>
+  <span class="lead-duration duration">0.012</span>
 
 
   <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-1">
 
 <div class="brief passed">
   <span class="keyword indention">Scenario</span>
-  <span class="name">Ingress with host and no backend</span>
+  <span class="name">Ingress with host and no backend serviceName</span>
 
 
      <i class="chevron fa fa-fw"></i>
@@ -252,7 +252,7 @@ $(document).ready(function() {
   <span class="keyword indention">Given</span>
   <span class="name">a new random namespace</span>
 
-  <span class="lead-duration duration">0.005</span>
+  <span class="lead-duration duration">0.006</span>
 
 </div>
 
@@ -277,9 +277,9 @@ $(document).ready(function() {
 
 <div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
-  <span class="name">creating an Ingress with host &quot;foo.bar&quot; without backend serviceName</span>
+  <span class="name">reading Ingress from manifest &quot;scenarios/001/ing.yaml&quot;</span>
 
-  <span class="lead-duration duration">0.000</span>
+  <span class="lead-duration duration">0.001</span>
 
 </div>
 
@@ -304,9 +304,9 @@ $(document).ready(function() {
 
 <div class="brief step-name-Then passed">
   <span class="keyword indention">Then</span>
-  <span class="name">The error message contains &quot;http.backend.serviceName: Required value&quot;</span>
+  <span class="name">creating Ingress from manifest returns an erro message containing &quot;http.backend.serviceName: Required value&quot;</span>
 
-  <span class="lead-duration duration">0.002</span>
+  <span class="lead-duration duration">0.004</span>
 
 </div>
 
@@ -348,7 +348,7 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">5.019</span>
+  <span class="lead-duration duration">10.022</span>
 
 
   <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-3">
@@ -391,7 +391,7 @@ $(document).ready(function() {
   <span class="keyword indention">Given</span>
   <span class="name">a new random namespace</span>
 
-  <span class="lead-duration duration">0.002</span>
+  <span class="lead-duration duration">0.003</span>
 
 </div>
 
@@ -416,9 +416,36 @@ $(document).ready(function() {
 
 <div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
-  <span class="name">an Ingress is created with host &quot;foo.bar&quot; with an invalid backend</span>
+  <span class="name">reading Ingress from manifest &quot;scenarios/002/ing.yaml&quot;</span>
 
-  <span class="lead-duration duration">0.011</span>
+  <span class="lead-duration duration">0.000</span>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+      <div class="step">
+
+
+<div class="brief step-name-And passed">
+  <span class="keyword indention">And</span>
+  <span class="name">creating Ingress from manifest</span>
+
+  <span class="lead-duration duration">0.012</span>
 
 </div>
 
@@ -445,7 +472,7 @@ $(document).ready(function() {
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">5.005</span>
+  <span class="lead-duration duration">10.006</span>
 
 </div>
 
@@ -595,14 +622,14 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">10.017</span>
+  <span class="lead-duration duration">10.024</span>
 
 
   <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-5">
 
 <div class="brief passed">
   <span class="keyword indention">Scenario</span>
-  <span class="name">Ingress should return 404 for paths</span>
+  <span class="name">Ingress should return 404 for paths with an invalid backend serviceName</span>
 
 
      <i class="chevron fa fa-fw"></i>
@@ -663,9 +690,36 @@ $(document).ready(function() {
 
 <div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
-  <span class="name">an Ingress is created with host &quot;foo.bar&quot; with an invalid backend</span>
+  <span class="name">reading Ingress from manifest &quot;scenarios/003/ing.yaml&quot;</span>
 
-  <span class="lead-duration duration">0.009</span>
+  <span class="lead-duration duration">0.000</span>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+      <div class="step">
+
+
+<div class="brief step-name-And passed">
+  <span class="keyword indention">And</span>
+  <span class="name">creating Ingress from manifest</span>
+
+  <span class="lead-duration duration">0.015</span>
 
 </div>
 
@@ -692,7 +746,7 @@ $(document).ready(function() {
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">10.004</span>
+  <span class="lead-duration duration">10.005</span>
 
 </div>
 
@@ -814,7 +868,7 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">10.017</span>
+  <span class="lead-duration duration">10.023</span>
 
 
   <span data-toggle="collapse" class=" collapsable-control" data-target="#element-7">
@@ -857,7 +911,7 @@ $(document).ready(function() {
   <span class="keyword indention">Given</span>
   <span class="name">a new random namespace</span>
 
-  <span class="lead-duration duration">0.002</span>
+  <span class="lead-duration duration">0.004</span>
 
 </div>
 
@@ -882,7 +936,34 @@ $(document).ready(function() {
 
 <div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
-  <span class="name">an Ingress is created with host &quot;foo.bar&quot; with an invalid backend</span>
+  <span class="name">reading Ingress from manifest &quot;scenarios/004/ing.yaml&quot;</span>
+
+  <span class="lead-duration duration">0.000</span>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+      <div class="step">
+
+
+<div class="brief step-name-And passed">
+  <span class="keyword indention">And</span>
+  <span class="name">creating Ingress from manifest</span>
 
   <span class="lead-duration duration">0.007</span>
 
@@ -911,7 +992,7 @@ $(document).ready(function() {
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">10.006</span>
+  <span class="lead-duration duration">10.012</span>
 
 </div>
 

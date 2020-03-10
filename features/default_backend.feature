@@ -14,7 +14,7 @@ Feature: Default backend
         Scenario: Ingress with host and no backend serviceName
             Given a new random namespace
               And reading Ingress from manifest "scenarios/001/ing.yaml"
-             Then creating Ingress from manifest returns an erro message containing "http.backend.serviceName: Required value"
+             Then creating Ingress from manifest returns an error message containing "http.backend.serviceName: Required value"
 
         Scenario: Ingress with host and invalid backend
             Given a new random namespace

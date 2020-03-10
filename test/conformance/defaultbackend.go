@@ -142,7 +142,8 @@ func DefaultBackendContext(s *godog.Suite, c *kubernetes.Clientset) {
 
 	s.Step(`^a new random namespace$`, f.aNewRandomNamespace)
 	s.Step(`^reading Ingress from manifest "([^"]*)"$`, f.readingIngressManifest)
-	s.Step(`^creating Ingress from manifest returns an erro message containing "([^"]*)"$`, f.newIngressFromManifestWithError)
+	s.Step(`^creating Ingress from manifest returns an error message containing "([^"]*)"$`,
+		f.newIngressFromManifestWithError)
 	s.Step(`^creating Ingress from manifest$`, f.creatingIngressFromManifest)
 	s.Step(`^The ingress status shows the IP address or FQDN where is exposed$`,
 		f.ingressStatusIPOrFQDN)
@@ -150,8 +151,6 @@ func DefaultBackendContext(s *godog.Suite, c *kubernetes.Clientset) {
 	s.Step(`^Send HTTP request with method "([^"]*)"$`, f.sendHTTPRequestWithMethod)
 	s.Step(`^Response status code is (\d+)$`, f.responseStatusCodeIs)
 	s.Step(`^Header "([^"]*)" is "([^"]*)"$`, f.headerIs)
-	//s.Step(`^an Ingress is created with host "([^"]*)" with an invalid backend$`,
-	//	f.anIngressIsCreatedWithFoobarHostWithInvalidBackend)
 	s.Step(`^Send HTTP request with <path> and <method> checking response status code is (\d+):$`,
 		f.sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs)
 	s.Step(`^With path "([^"]*)"$`, f.withPath)

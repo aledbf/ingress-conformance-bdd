@@ -25,27 +25,27 @@ func (f *withoutHost) aNewRandomNamespace() error {
 	return nil
 }
 
-func anEchoDeploymentExists() error {
+func (f *withoutHost) anEchoDeploymentExists() error {
 	return godog.ErrPending
 }
 
-func anIngressIsCreatedWithoutHostUsingEchoServiceAsBackend() error {
+func (f *withoutHost) anIngressIsCreatedWithoutHostUsingEchoServiceAsBackend() error {
 	return godog.ErrPending
 }
 
-func theIngressStatusShowsTheIPAddressOrFQDNWhereIsExposed() error {
+func (f *withoutHost) theIngressStatusShowsTheIPAddressOrFQDNWhereIsExposed() error {
 	return godog.ErrPending
 }
 
-func sendGETHTTPRequest() error {
+func (f *withoutHost) sendGETHTTPRequest() error {
 	return godog.ErrPending
 }
 
-func iReceiveValidHTPPResponseCode(arg1 int) error {
+func (f *withoutHost) iReceiveValidHTPPResponseCode(arg1 int) error {
 	return godog.ErrPending
 }
 
-func headerIsNotPresent(arg1 string) error {
+func (f *withoutHost) headerIsNotPresent(arg1 string) error {
 	return godog.ErrPending
 }
 
@@ -56,12 +56,14 @@ func WithoutHostContext(s *godog.Suite, c *kubernetes.Clientset) {
 	}
 
 	s.Step(`^a new random namespace$`, f.aNewRandomNamespace)
-	s.Step(`^an echo deployment exists$`, anEchoDeploymentExists)
-	s.Step(`^an Ingress is created without host using echo service as backend$`, anIngressIsCreatedWithoutHostUsingEchoServiceAsBackend)
-	s.Step(`^the ingress status shows the IP address or FQDN where is exposed$`, theIngressStatusShowsTheIPAddressOrFQDNWhereIsExposed)
-	s.Step(`^send GET HTTP request$`, sendGETHTTPRequest)
-	s.Step(`^I receive valid HTPP response code (\d+)$`, iReceiveValidHTPPResponseCode)
-	s.Step(`^Header "([^"]*)" is not present$`, headerIsNotPresent)
+	s.Step(`^an echo deployment exists$`, f.anEchoDeploymentExists)
+	s.Step(`^an Ingress is created without host using echo service as backend$`,
+		f.anIngressIsCreatedWithoutHostUsingEchoServiceAsBackend)
+	s.Step(`^the ingress status shows the IP address or FQDN where is exposed$`,
+		f.theIngressStatusShowsTheIPAddressOrFQDNWhereIsExposed)
+	s.Step(`^send GET HTTP request$`, f.sendGETHTTPRequest)
+	s.Step(`^I receive valid HTPP response code (\d+)$`, f.iReceiveValidHTPPResponseCode)
+	s.Step(`^Header "([^"]*)" is not present$`, f.headerIsNotPresent)
 
 	s.BeforeScenario(func(this interface{}) {
 		f.state = tstate.New(nil)

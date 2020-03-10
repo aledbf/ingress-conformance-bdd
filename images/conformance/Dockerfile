@@ -12,6 +12,7 @@ RUN curl -sSL https://storage.googleapis.com/kubernetes-release/release/${KUBE_V
 
 COPY run_e2e.sh /
 COPY features /features
+COPY manifests /manifests
 COPY ingress-conformance-bdd.test /
 
 ENV RESULTS_DIR="/tmp/results"

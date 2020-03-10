@@ -23,6 +23,8 @@ TAG ?=v$(shell date +%m%d%Y)-$(shell git rev-parse --short HEAD)
 build:
 	cp    ../../ingress-conformance-bdd.test ingress-conformance-bdd.test
 	cp -R ../../features .
+	cp -R ../../manifests .
+
 	docker build \
 		--build-arg KUBE_VERSION=$(KUBE_VERSION) \
 		-t $(IMAGE):$(TAG) .

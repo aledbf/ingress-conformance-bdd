@@ -56,7 +56,7 @@ func TestMain(m *testing.M) {
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")
 	flag.StringVar(&godogFeatures, "features", "./features", "Directory or individual files with extension .feature to run")
-	flag.StringVar(&manifests, "manifests-directory", "./manifests", "Directory where manifests for test applications or scenerarios are located")
+	flag.StringVar(&manifests, "manifests", "./manifests", "Directory where manifests for test applications or scenerarios are located")
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
 	flag.Parse()
 

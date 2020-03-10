@@ -18,6 +18,8 @@ type Scenario struct {
 
 	Namespace string
 
+	IngressManifest string
+
 	Ingress *v1beta1.Ingress
 	Address string
 }

@@ -36,6 +36,7 @@ var (
 	exitCode   int
 	kubeClient *clientset.Clientset
 
+	// default test output is stdout
 	output = os.Stdout
 )
 

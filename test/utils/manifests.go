@@ -66,12 +66,11 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string,
 	}
 
 	if sf, err := filesource.GetAbsPath(filepath.Join(manifestPath, secretFile)); err == nil {
-		content, err := Read(sf)
-		if err != nil {
-			return nil, err
+		if exists := Exists(sf); !exists {
+			return nil, fmt.Errorf("file %v does not exists", sf)
 		}
 
-		_, err = RunKubectlInput(ns, string(content), "create", "-f", "-", fmt.Sprintf("--namespace=%v", ns))
+		_, err = RunKubectl(ns, "create", "-f", sf)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +82,7 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string,
 	}
 
 	if len(ingList.Items) == 0 {
-		return nil, fmt.Errorf("There are no Ingress objects present in namespace %v", ns)
+		return nil, fmt.Errorf("there are no Ingress objects present in namespace %v", ns)
 	}
 
 	if len(ingAnnotations) > 0 {
@@ -102,12 +101,11 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string,
 }
 
 func createFromFile(file, ns string) error {
-	content, err := Read(file)
-	if err != nil {
-		return err
+	if exists := Exists(file); !exists {
+		return fmt.Errorf("file %v does not exists", file)
 	}
 
-	_, err = RunKubectlInput(ns, string(content), "create", "-f", "-", fmt.Sprintf("--namespace=%v", ns))
+	_, err := RunKubectl(ns, "apply", "-f", file)
 	return err
 }
 

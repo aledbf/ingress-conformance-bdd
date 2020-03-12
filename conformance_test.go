@@ -50,13 +50,23 @@ var (
 	manifests string
 )
 
+const (
+	// do not run tests concurrently
+	runTestsSerially = 1
+
+	// expected exit code
+	successExitCode = 0
+)
+
 func TestMain(m *testing.M) {
 	flag.StringVar(&godogFormat, "format", "pretty", "Sets godog format to use")
 	flag.StringVar(&godogTags, "tags", "", "Tags for conformance test")
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")
-	flag.StringVar(&godogFeatures, "features", "./features", "Directory or individual files with extension .feature to run")
-	flag.StringVar(&manifests, "manifests", "./manifests", "Directory where manifests for test applications or scenerarios are located")
+	flag.StringVar(&godogFeatures, "features", "./features",
+		"Directory or individual files with extension .feature to run")
+	flag.StringVar(&manifests, "manifests", "./manifests",
+		"Directory where manifests for test applications or scenerarios are located")
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
 	flag.Parse()
 
@@ -133,10 +143,10 @@ func TestSuite(t *testing.T) {
 		StopOnFailure: godogStopOnFailure,
 		NoColors:      godogNoColors,
 		Output:        output,
-		Concurrency:   1,
+		Concurrency:   runTestsSerially,
 	})
 
-	if exitCode != 0 {
+	if exitCode != successExitCode {
 		t.Error("Error encountered running the test suite")
 	}
 }

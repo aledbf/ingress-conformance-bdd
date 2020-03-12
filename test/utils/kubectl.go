@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"io"
 	"os"
 
 	"k8s.io/kubernetes/pkg/kubectl/cmd"
@@ -16,8 +15,6 @@ type KubectlBuilder struct {
 	namespace string
 
 	args []string
-
-	stdin io.Reader
 }
 
 // NewKubectlCommand returns a KubectlBuilder for running kubectl.

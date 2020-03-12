@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,8 +29,10 @@ const (
 // Optional: secret.yaml, ingAnnotations, svcAnnotations
 // If ingAnnotations is specified it will overwrite any annotations in ing.yaml
 // If svcAnnotations is specified it will overwrite any annotations in svc.yaml
-func CreateFromPath(c clientset.Interface, manifestPath, ns string,
-	ingAnnotations map[string]string, svcAnnotations map[string]string) (*networkingv1beta1.Ingress, error) {
+func CreateFromPath(c clientset.Interface,
+	manifestPath, ns string,
+	ingAnnotations map[string]string,
+	svcAnnotations map[string]string) (*networkingv1beta1.Ingress, error) {
 	files := []string{
 		replicationControllerFile,
 		serviceFile,
@@ -105,8 +108,17 @@ func createFromFile(file, ns string) error {
 		return fmt.Errorf("file %v does not exists", file)
 	}
 
-	_, err := RunKubectl(ns, "apply", "-f", file)
-	return err
+	out, err := RunKubectl(ns, "apply", "-f", file)
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(out, "service/") {
+		// parse service name
+		// wait until endpoints are available
+	}
+
+	return nil
 }
 
 // IngressFromManifest reads a .json/yaml file and returns the ingress in it.

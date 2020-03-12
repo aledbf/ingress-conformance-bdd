@@ -124,6 +124,7 @@ func (r RootFileSource) ReadTestFile(filePath string) ([]byte, error) {
 // a certain root directory.
 func (r RootFileSource) DescribeFiles() string {
 	description := fmt.Sprintf("Test files are expected in %q", r.Root)
+
 	if !path.IsAbs(r.Root) {
 		abs, err := filepath.Abs(r.Root)
 		if err == nil {

@@ -14,10 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package testfiles provides a wrapper around various optional ways
-// of retrieving additional files needed during a test run:
-// - builtin bindata
-// - filesystem access
 package utils
 
 import (
@@ -29,26 +25,20 @@ import (
 	"path/filepath"
 )
 
-var filesources []FileSource
+var filesource FileSource
 
-// AddFileSource registers another provider for files that may be
-// needed at runtime. Should be called during initialization of a test
-// binary.
-func AddFileSource(filesource FileSource) {
-	filesources = append(filesources, filesource)
+// SetFileSource registers a provider for files that may be needed at
+// runtime. Should be called during initialization of a test binary.
+func SetFileSource(source FileSource) {
+	filesource = source
 }
 
 // FileSource implements one way of retrieving test file content.  For
 // example, one file source could read from the original source code
 // file tree, another from bindata compiled into a test executable.
 type FileSource interface {
-	// ReadTestFile retrieves the content of a file that gets maintained
-	// alongside a test's source code. Files are identified by the
-	// relative path inside the repository containing the tests, for
-	// example "cluster/gce/upgrade.sh" inside kubernetes/kubernetes.
-	//
-	// When the file is not found, a nil slice is returned. An error is
-	// returned for all fatal errors.
+	// When the file is not found, a nil slice is returned.
+	// An error is returned for all fatal errors.
 	ReadTestFile(filePath string) ([]byte, error)
 
 	// DescribeFiles returns a multi-line description of which
@@ -56,33 +46,33 @@ type FileSource interface {
 	// used as part of the error message when a file cannot be
 	// found.
 	DescribeFiles() string
+
+	// GetAbsPath returns the full path of a file
+	// An error is returned for all fatal errors.
+	GetAbsPath(filePath string) (string, error)
 }
 
 // Read tries to retrieve the desired file content from
 // one of the registered file sources.
 func Read(filePath string) ([]byte, error) {
-	if len(filesources) == 0 {
+	if filesource == nil {
 		return nil, fmt.Errorf("no file sources registered (yet?), cannot retrieve test file %s", filePath)
 	}
 
-	for _, filesource := range filesources {
-		data, err := filesource.ReadTestFile(filePath)
-		if err != nil {
-			return nil, fmt.Errorf("fatal error retrieving test file %s: %s", filePath, err)
-		}
+	data, err := filesource.ReadTestFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("fatal error retrieving test file %s: %s", filePath, err)
+	}
 
-		if data != nil {
-			return data, nil
-		}
+	if data != nil {
+		return data, nil
 	}
 
 	// Here we try to generate an error that points test authors
 	// or users in the right direction for resolving the problem.
 	error := fmt.Sprintf("Test file %q was not found.\n", filePath)
-	for _, filesource := range filesources {
-		error += filesource.DescribeFiles()
-		error += "\n"
-	}
+	error += filesource.DescribeFiles()
+	error += "\n"
 
 	return nil, errors.New(error)
 }
@@ -91,16 +81,14 @@ func Read(filePath string) ([]byte, error) {
 // are handled by calling the fail function, which then should
 // abort the current test.
 func Exists(filePath string) bool {
-	for _, filesource := range filesources {
-		data, err := filesource.ReadTestFile(filePath)
-		if err != nil {
-			// log error?
-			return false
-		}
+	data, err := filesource.ReadTestFile(filePath)
+	if err != nil {
+		// log error?
+		return false
+	}
 
-		if data != nil {
-			return true
-		}
+	if data != nil {
+		return true
 	}
 
 	return false
@@ -132,8 +120,8 @@ func (r RootFileSource) ReadTestFile(filePath string) ([]byte, error) {
 	return data, err
 }
 
-// DescribeFiles explains that it looks for files inside a certain
-// root directory.
+// DescribeFiles explains that it looks for files inside
+// a certain root directory.
 func (r RootFileSource) DescribeFiles() string {
 	description := fmt.Sprintf("Test files are expected in %q", r.Root)
 	if !path.IsAbs(r.Root) {
@@ -142,6 +130,25 @@ func (r RootFileSource) DescribeFiles() string {
 			description += fmt.Sprintf(" = %q", abs)
 		}
 	}
+
 	description += "."
+
 	return description
+}
+
+func (r RootFileSource) GetAbsPath(filePath string) (string, error) {
+	var fullPath string
+
+	if path.IsAbs(filePath) {
+		fullPath = filePath
+	} else {
+		fullPath = filepath.Join(r.Root, filePath)
+	}
+
+	_, err := os.Stat(fullPath)
+	if err != nil {
+		return "", err
+	}
+
+	return fullPath, nil
 }

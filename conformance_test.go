@@ -33,8 +33,7 @@ import (
 )
 
 var (
-	exitCode   int
-	kubeClient *clientset.Clientset
+	exitCode int
 
 	// default test output is stdout
 	output = os.Stdout
@@ -61,11 +60,12 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
 	flag.Parse()
 
-	var err error
-	kubeClient, err = setupSuite()
+	kubeClient, err := setupSuite()
 	if err != nil {
 		klog.Fatal(err)
 	}
+
+	conformance.KubeClient = kubeClient
 
 	if godogOutput != "" {
 		file, err := os.Create(godogOutput)
@@ -91,7 +91,7 @@ func TestMain(m *testing.M) {
 		klog.Fatalf("The specified value in the flag --manifests-directory (%v) is not a directory", manifests)
 	}
 
-	utils.AddFileSource(utils.RootFileSource{
+	utils.SetFileSource(utils.RootFileSource{
 		Root: manifestsPath,
 	})
 
@@ -124,8 +124,8 @@ func setupSuite() (*clientset.Clientset, error) {
 
 func TestSuite(t *testing.T) {
 	exitCode += godog.RunWithOptions("conformance", func(s *godog.Suite) {
-		conformance.DefaultBackendContext(s, kubeClient)
-		conformance.WithoutHostContext(s, kubeClient)
+		conformance.DefaultBackendContext(s)
+		conformance.WithoutHostContext(s)
 	}, godog.Options{
 		Format:        godogFormat,
 		Paths:         strings.Split(godogFeatures, ","),
@@ -133,6 +133,7 @@ func TestSuite(t *testing.T) {
 		StopOnFailure: godogStopOnFailure,
 		NoColors:      godogNoColors,
 		Output:        output,
+		Concurrency:   1,
 	})
 
 	if exitCode != 0 {

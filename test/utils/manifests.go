@@ -29,7 +29,7 @@ const (
 // If ingAnnotations is specified it will overwrite any annotations in ing.yaml
 // If svcAnnotations is specified it will overwrite any annotations in svc.yaml
 func CreateFromPath(c clientset.Interface, manifestPath, ns string,
-	ingAnnotations map[string]string, svcAnnotations map[string]string) error {
+	ingAnnotations map[string]string, svcAnnotations map[string]string) (*networkingv1beta1.Ingress, error) {
 	files := []string{
 		replicationControllerFile,
 		serviceFile,
@@ -37,16 +37,21 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string,
 	}
 
 	for _, file := range files {
-		err := createFromFile(filepath.Join(manifestPath, file), ns)
+		f, err := filesource.GetAbsPath(filepath.Join(manifestPath, file))
 		if err != nil {
-			return err
+			return nil, err
+		}
+
+		err = createFromFile(f, ns)
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	if len(svcAnnotations) > 0 {
 		svcList, err := c.CoreV1().Services(ns).List(metav1.ListOptions{})
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		for _, svc := range svcList.Items {
@@ -55,41 +60,45 @@ func CreateFromPath(c clientset.Interface, manifestPath, ns string,
 
 			_, err = c.CoreV1().Services(ns).Update(s)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
 
-	if exists := Exists(filepath.Join(manifestPath, secretFile)); exists {
-		content, err := Read(filepath.Join(manifestPath, secretFile))
+	if sf, err := filesource.GetAbsPath(filepath.Join(manifestPath, secretFile)); err == nil {
+		content, err := Read(sf)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		_, err = RunKubectlInput(ns, string(content), "create", "-f", "-", fmt.Sprintf("--namespace=%v", ns))
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	if len(ingAnnotations) > 0 {
-		ingList, err := c.NetworkingV1beta1().Ingresses(ns).List(metav1.ListOptions{})
-		if err != nil {
-			return err
-		}
+	ingList, err := c.NetworkingV1beta1().Ingresses(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
 
+	if len(ingList.Items) == 0 {
+		return nil, fmt.Errorf("There are no Ingress objects present in namespace %v", ns)
+	}
+
+	if len(ingAnnotations) > 0 {
 		for _, ing := range ingList.Items {
 			i := &ing
 			i.Annotations = ingAnnotations
 
-			_, err = c.NetworkingV1beta1().Ingresses(ns).Update(i)
+			_, err := c.NetworkingV1beta1().Ingresses(ns).Update(i)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
 
-	return nil
+	return &ingList.Items[0], nil
 }
 
 func createFromFile(file, ns string) error {
@@ -120,7 +129,7 @@ func IngressFromManifest(file, namespace string) (*networkingv1beta1.Ingress, er
 		return nil, err
 	}
 
-	ing.Namespace = namespace
+	ing.SetNamespace(namespace)
 
 	return &ing, nil
 }

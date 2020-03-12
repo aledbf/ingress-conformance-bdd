@@ -13,12 +13,13 @@ import (
 type withoutHost struct{}
 
 func creatingObjectsFromDirectory(path string) error {
-	ing, err := utils.CreateFromPath(KubeClient, path, state.Namespace, nil, nil)
+	var err error
+
+	state.Ingress, err = utils.CreateFromPath(KubeClient, path, state.Namespace, nil, nil)
 	if err != nil {
 		return err
 	}
 
-	state.Ingress = ing
 	return nil
 }
 

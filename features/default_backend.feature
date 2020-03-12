@@ -24,7 +24,6 @@ Feature: Default backend
               And Header "Host" with value "foo.bar"
               And Send HTTP request with method "GET"
              Then Response status code is 404
-              And Header "Host" is "foo.bar"
 
         Scenario: Ingress should return 404 for paths with an invalid backend serviceName
             Given a new random namespace
@@ -49,4 +48,3 @@ Feature: Default backend
               And Header "Host" with value "foo.bar"
               And Send HTTP request with method "GET"
              Then Response status code is 404
-              And Header "Host" is "foo.bar"

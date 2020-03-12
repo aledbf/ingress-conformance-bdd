@@ -19,14 +19,14 @@ const (
 )
 
 func (f *defaultbackend) readingIngressManifest(file string) error {
-	state.IngressManifest = file
+	var err error
 
-	ing, err := utils.IngressFromManifest(file, state.Namespace)
+	state.Ingress, err = utils.IngressFromManifest(file, state.Namespace)
 	if err != nil {
 		return err
 	}
 
-	state.Ingress = ing
+	state.IngressManifest = file
 
 	return nil
 }
@@ -49,20 +49,44 @@ func (f *defaultbackend) newIngressFromManifestWithError(expected string) error 
 	return fmt.Errorf("expected an error containing %v but returned %v", expected, err.Error())
 }
 
-func (f *defaultbackend) headerWithValue(arg1, arg2 string) error {
+func (f *defaultbackend) headerWithValue(header, value string) error {
+	state.AddRequestHeader(header, value)
 	return nil
 }
 
-func (f *defaultbackend) sendHTTPRequestWithMethod(arg1 string) error {
+func (f *defaultbackend) sendHTTPRequestWithMethod(method string) error {
+	req, err := http.NewRequest(method, fmt.Sprintf("http://%v", state.Address), nil)
+	if err != nil {
+		return err
+	}
+
+	err = state.SendRequest(req)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (f *defaultbackend) headerIs(arg1, arg2 string) error {
+func (f *defaultbackend) headerIs(header, value string) error {
+	lheader := strings.ToLower(header)
+	rvalue, ok := state.ResponseHeaders[lheader]
+	if !ok {
+		return fmt.Errorf("expected response containing header %v", lheader)
+	}
+
+	if len(rvalue) > 1 {
+		return fmt.Errorf("header %v contains more than one value", lheader)
+	}
+
+	if value != rvalue[0] {
+		return fmt.Errorf("unexpected value for header %v (expected %v but %v was returned)", header, value, rvalue)
+	}
+
 	return nil
 }
 
-func (f *defaultbackend) sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs(statusCode int,
-	testTable *gherkin.DataTable) error {
+func (f *defaultbackend) requestsWithPathAndMethod(statusCode int, testTable *gherkin.DataTable) error {
 	if len(testTable.Rows) < minimumRowCount {
 		return fmt.Errorf("expected a table with at least one row")
 	}
@@ -75,7 +99,8 @@ func (f *defaultbackend) sendHTTPRequestWithPathAndMethodCheckingResponseStatusC
 		path := row.Cells[0].Value
 		method := row.Cells[1].Value
 
-		req, err := http.NewRequest(method, fmt.Sprintf("http://%v%v", state.Address, path), nil)
+		req, err := http.NewRequest(method,
+			fmt.Sprintf("http://%v%v", state.Address, state.RequestPath), nil)
 		if err != nil {
 			return err
 		}
@@ -94,8 +119,10 @@ func (f *defaultbackend) sendHTTPRequestWithPathAndMethodCheckingResponseStatusC
 	return nil
 }
 
-func (f *defaultbackend) withPath(arg1 string) error {
-	return godog.ErrPending
+func (f *defaultbackend) withPath(path string) error {
+	state.RequestPath = path
+
+	return nil
 }
 
 // DefaultBackendContext adds steps to setup and verify tests
@@ -114,7 +141,7 @@ func DefaultBackendContext(s *godog.Suite) {
 	s.Step(`^Response status code is (\d+)$`, responseStatusCodeIs)
 	s.Step(`^Header "([^"]*)" is "([^"]*)"$`, f.headerIs)
 	s.Step(`^Send HTTP request with <path> and <method> checking response status code is (\d+):$`,
-		f.sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs)
+		f.requestsWithPathAndMethod)
 	s.Step(`^With path "([^"]*)"$`, f.withPath)
 
 	s.BeforeScenario(func(this interface{}) {

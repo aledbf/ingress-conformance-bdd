@@ -50,10 +50,10 @@ $(document).ready(function() {
     var chartData = {
         datasets: [{
             data: [
-                22,
+                30,
                 0,
-                9,
-                2,
+                0,
+                0,
                 0
             ],
             backgroundColor: [
@@ -93,7 +93,7 @@ $(document).ready(function() {
                         var allData = data.datasets[tooltipItem.datasetIndex].data;
                         var tooltipLabel = data.labels[tooltipItem.index];
                         var tooltipData = allData[tooltipItem.index];
-                        var tooltipPercentage = Math.round(10000 * tooltipData / 33) / 100;
+                        var tooltipPercentage = Math.round(10000 * tooltipData / 30) / 100;
                         return tooltipLabel + ": " + tooltipData + " (" + tooltipPercentage + "%)";
                     }
                 }
@@ -106,8 +106,8 @@ $(document).ready(function() {
     var chartData = {
         datasets: [{
             data: [
-                3,
-                2
+                5,
+                0
             ],
             backgroundColor: [
                 "#00B000",
@@ -153,8 +153,8 @@ $(document).ready(function() {
     var chartData = {
         datasets: [{
             data: [
-                   0,
-                   2
+                   2,
+                   0
                ],
                backgroundColor: [
                 "#00B000",
@@ -231,7 +231,7 @@ $(document).ready(function() {
     <tr class="info">
       <td>Ingress Conformance Test</td>
         <td>1</td>
-      <td>11 Mar 2020, 17:17</td>
+      <td>12 Mar 2020, 20:57</td>
     </tr>
   </tbody>
 </table>
@@ -338,69 +338,69 @@ $(document).ready(function() {
       <tr>
         <td class="tagname"><a href="report-feature_2022162379.html">Default backend</a></td>
 
-        <td      class="passed"    >21</td>
+        <td      class="passed"    >24</td>
         <td >0</td>
-        <td     class="skipped"   >4</td>
-        <td     class="pending"   >1</td>
         <td >0</td>
-        <td class="total">26</td>
+        <td >0</td>
+        <td >0</td>
+        <td class="total">24</td>
 
-        <td  class="passed"    >3</td>
-        <td  class="failed"    >1</td>
+        <td  class="passed"    >4</td>
+        <td >0</td>
         <td class="total">4</td>
 
-        <td class="duration" data-value="30087858903">30.087</td>
-        <td class="failed">Failed</td>
+        <td class="duration" data-value="25083460622">25.083</td>
+        <td class="passed">Passed</td>
       </tr>
       <tr>
         <td class="tagname"><a href="report-feature_1_3511184728.html">Ingress without host field</a></td>
 
-        <td      class="passed"    >1</td>
+        <td      class="passed"    >6</td>
         <td >0</td>
-        <td     class="skipped"   >5</td>
-        <td     class="pending"   >1</td>
         <td >0</td>
-        <td class="total">7</td>
+        <td >0</td>
+        <td >0</td>
+        <td class="total">6</td>
 
+        <td  class="passed"    >1</td>
         <td >0</td>
-        <td  class="failed"    >1</td>
         <td class="total">1</td>
 
-        <td class="duration" data-value="3723423">0.003</td>
-        <td class="failed">Failed</td>
+        <td class="duration" data-value="10461168142">10.461</td>
+        <td class="passed">Passed</td>
       </tr>
   </tbody>
 
   <tfoot class="total">
     <tr>
       <td></td>
-      <td>22</td>
+      <td>30</td>
       <td>0</td>
-      <td>9</td>
-      <td>2</td>
       <td>0</td>
-      <td>33</td>
+      <td>0</td>
+      <td>0</td>
+      <td>30</td>
 
-      <td>3</td>
-      <td>2</td>
+      <td>5</td>
+      <td>0</td>
       <td>5</td>
 
-      <td class="duration">30.091</td>
+      <td class="duration">35.544</td>
       <td>2</td>
     </tr>
     <tr>
       <td></td>
-      <td>66.67%</td>
+      <td>100.00%</td>
       <td>0.00%</td>
-      <td>27.27%</td>
-      <td>6.06%</td>
+      <td>0.00%</td>
+      <td>0.00%</td>
       <td>0.00%</td>
       <td></td>
-      <td>60.00%</td>
-      <td>40.00%</td>
-      <td></td>
-      <td></td>
+      <td>100.00%</td>
       <td>0.00%</td>
+      <td></td>
+      <td></td>
+      <td>100.00%</td>
     </tr>
   </tfoot>
 </table>

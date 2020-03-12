@@ -11,6 +11,10 @@ import (
 type Scenario struct {
 	client *http.Client
 
+	RequestPath string
+
+	RequestHeaders http.Header
+
 	ResponseBody    []byte
 	ResponseHeaders http.Header
 
@@ -31,7 +35,9 @@ func New(client *http.Client) *Scenario {
 	}
 
 	return &Scenario{
-		client: client,
+		client:         client,
+		RequestPath:    "/",
+		RequestHeaders: make(http.Header),
 	}
 }
 
@@ -39,6 +45,8 @@ func New(client *http.Client) *Scenario {
 // state. In case of an error, the HTTP state is
 // removed and returns an error.
 func (f *Scenario) SendRequest(req *http.Request) error {
+	req.Header = f.RequestHeaders
+
 	resp, err := f.client.Do(req)
 	if err != nil {
 		f.ResponseBody = nil
@@ -60,4 +68,8 @@ func (f *Scenario) SendRequest(req *http.Request) error {
 	defer resp.Body.Close()
 
 	return nil
+}
+
+func (f *Scenario) AddRequestHeader(header, value string) {
+	f.RequestHeaders.Add(header, value)
 }

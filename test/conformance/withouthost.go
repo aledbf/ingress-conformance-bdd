@@ -1,23 +1,34 @@
 package conformance
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/cucumber/godog"
-	"k8s.io/client-go/kubernetes"
 
 	tstate "github.com/aledbf/ingress-conformance-bdd/test/state"
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
 
-type withoutHost struct {
-	kubeClient *kubernetes.Clientset
+type withoutHost struct{}
 
-	state *tstate.Scenario
+func creatingObjectsFromDirectory(path string) error {
+	ing, err := utils.CreateFromPath(KubeClient, path, state.Namespace, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	state.Ingress = ing
+	return nil
 }
 
-func (f *withoutHost) aNewRandomNamespace() error {
-	var err error
+func (f *withoutHost) sendGETHTTPRequest() error {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%v", state.Address), nil)
+	if err != nil {
+		return err
+	}
 
-	f.state.Namespace, err = utils.CreateTestNamespace(f.kubeClient)
+	err = state.SendRequest(req)
 	if err != nil {
 		return err
 	}
@@ -25,52 +36,32 @@ func (f *withoutHost) aNewRandomNamespace() error {
 	return nil
 }
 
-func (f *withoutHost) anEchoDeploymentExists() error {
-	return godog.ErrPending
-}
+func (f *withoutHost) headerIsNotPresent(header string) error {
+	if value, ok := state.ResponseHeaders[header]; ok {
+		return fmt.Errorf("expected no header with name %v but exists (value %v)", header, value)
+	}
 
-func (f *withoutHost) anIngressIsCreatedWithoutHostUsingEchoServiceAsBackend() error {
-	return godog.ErrPending
-}
-
-func (f *withoutHost) theIngressStatusShowsTheIPAddressOrFQDNWhereIsExposed() error {
-	return godog.ErrPending
-}
-
-func (f *withoutHost) sendGETHTTPRequest() error {
-	return godog.ErrPending
-}
-
-func (f *withoutHost) iReceiveValidHTPPResponseCode(arg1 int) error {
-	return godog.ErrPending
-}
-
-func (f *withoutHost) headerIsNotPresent(arg1 string) error {
-	return godog.ErrPending
+	return nil
 }
 
 // WithoutHostContext adds steps to setup and verify tests
-func WithoutHostContext(s *godog.Suite, c *kubernetes.Clientset) {
-	f := &withoutHost{
-		kubeClient: c,
-	}
+func WithoutHostContext(s *godog.Suite) {
+	f := &withoutHost{}
 
-	s.Step(`^a new random namespace$`, f.aNewRandomNamespace)
-	s.Step(`^an echo deployment exists$`, f.anEchoDeploymentExists)
-	s.Step(`^an Ingress is created without host using echo service as backend$`,
-		f.anIngressIsCreatedWithoutHostUsingEchoServiceAsBackend)
+	s.Step(`^a new random namespace$`, aNewRandomNamespace)
 	s.Step(`^the ingress status shows the IP address or FQDN where is exposed$`,
-		f.theIngressStatusShowsTheIPAddressOrFQDNWhereIsExposed)
+		ingressStatusIPOrFQDN)
 	s.Step(`^send GET HTTP request$`, f.sendGETHTTPRequest)
-	s.Step(`^I receive valid HTPP response code (\d+)$`, f.iReceiveValidHTPPResponseCode)
 	s.Step(`^Header "([^"]*)" is not present$`, f.headerIsNotPresent)
+	s.Step(`^creating objects from directory "([^"]*)"$`, creatingObjectsFromDirectory)
+	s.Step(`^the HTTP response code is (\d+)$`, responseStatusCodeIs)
 
 	s.BeforeScenario(func(this interface{}) {
-		f.state = tstate.New(nil)
+		state = tstate.New(nil)
 	})
 
 	s.AfterScenario(func(interface{}, error) {
 		// delete namespace an all the content
-		_ = utils.DeleteKubeNamespace(c, f.state.Namespace)
+		_ = utils.DeleteKubeNamespace(KubeClient, state.Namespace)
 	})
 }

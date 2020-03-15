@@ -59,6 +59,8 @@ const (
 )
 
 func TestMain(m *testing.M) {
+	klog.InitFlags(nil)
+
 	flag.StringVar(&godogFormat, "format", "pretty", "Sets godog format to use")
 	flag.StringVar(&godogTags, "tags", "", "Tags for conformance test")
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
@@ -68,6 +70,7 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&manifests, "manifests", "./manifests",
 		"Directory where manifests for test applications or scenerarios are located")
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
+
 	flag.Parse()
 
 	kubeClient, err := setupSuite()

@@ -3,10 +3,10 @@ package utils
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
+	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	clientset "k8s.io/client-go/kubernetes"
@@ -33,89 +33,92 @@ func CreateFromPath(c clientset.Interface,
 	manifestPath, ns string,
 	ingAnnotations map[string]string,
 	svcAnnotations map[string]string) (*networkingv1beta1.Ingress, error) {
-	files := []string{
-		replicationControllerFile,
-		serviceFile,
-		ingressFile,
-	}
 
-	for _, file := range files {
-		f, err := filesource.GetAbsPath(filepath.Join(manifestPath, file))
-		if err != nil {
-			return nil, err
-		}
-
-		err = createFromFile(f, ns)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if len(svcAnnotations) > 0 {
-		svcList, err := c.CoreV1().Services(ns).List(metav1.ListOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		for _, svc := range svcList.Items {
-			s := &svc
-			s.Annotations = svcAnnotations
-
-			_, err = c.CoreV1().Services(ns).Update(s)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	if sf, err := filesource.GetAbsPath(filepath.Join(manifestPath, secretFile)); err == nil {
-		if exists := Exists(sf); !exists {
-			return nil, fmt.Errorf("file %v does not exists", sf)
-		}
-
-		_, err = RunKubectl(ns, "create", "-f", sf)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	ingList, err := c.NetworkingV1beta1().Ingresses(ns).List(metav1.ListOptions{})
+	rc := new(corev1.ReplicationController)
+	err := createFromFile(filepath.Join(manifestPath, replicationControllerFile), ns, rc)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(ingList.Items) == 0 {
-		return nil, fmt.Errorf("there are no Ingress objects present in namespace %v", ns)
+	_, err = c.CoreV1().ReplicationControllers(ns).Create(rc)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(ingAnnotations) > 0 {
-		for _, ing := range ingList.Items {
-			i := &ing
-			i.Annotations = ingAnnotations
+	svc := new(corev1.Service)
+	err = createFromFile(filepath.Join(manifestPath, serviceFile), ns, svc)
+	if err != nil {
+		return nil, err
+	}
 
-			_, err := c.NetworkingV1beta1().Ingresses(ns).Update(i)
-			if err != nil {
-				return nil, err
-			}
+	if len(svcAnnotations) > 0 {
+		svc.Annotations = svcAnnotations
+	}
+
+	_, err = c.CoreV1().Services(ns).Create(svc)
+	if err != nil {
+		return nil, err
+	}
+
+	err = WaitForServiceEndpointsNum(c, ns, svc.Name, 1, 2*time.Second, 5*time.Minute)
+	if err != nil {
+		return nil, err
+	}
+
+	secretPath := filepath.Join(manifestPath, secretFile)
+	if Exists(secretPath) {
+		secret := new(corev1.Secret)
+		err = createFromFile(filepath.Join(manifestPath, secretFile), ns, secret)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = c.CoreV1().Secrets(ns).Create(secret)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	return &ingList.Items[0], nil
-}
-
-func createFromFile(file, ns string) error {
-	if exists := Exists(file); !exists {
-		return fmt.Errorf("file %v does not exists", file)
+	ing := new(networkingv1beta1.Ingress)
+	err = createFromFile(filepath.Join(manifestPath, ingressFile), ns, ing)
+	if err != nil {
+		return nil, err
 	}
 
-	out, err := RunKubectl(ns, "apply", "-f", file)
+	if len(ingAnnotations) > 0 {
+		ing.Annotations = ingAnnotations
+	}
+
+	ing, err = c.NetworkingV1beta1().Ingresses(ns).Create(ing)
+	if err != nil {
+		return nil, err
+	}
+
+	return ing, nil
+}
+
+func createFromFile(path, ns string, obj runtime.Object) error {
+	file, err := filesource.GetAbsPath(path)
 	if err != nil {
 		return err
 	}
 
-	if strings.Contains(out, "service/") {
-		// parse service name
-		// wait until endpoints are available
+	if exists := Exists(file); !exists {
+		return fmt.Errorf("file %v does not exists", file)
+	}
+
+	data, err := Read(file)
+	if err != nil {
+		return err
+	}
+
+	json, err := utilyaml.ToJSON(data)
+	if err != nil {
+		return err
+	}
+
+	if err := runtime.DecodeInto(scheme.Codecs.UniversalDecoder(), json, obj); err != nil {
+		return err
 	}
 
 	return nil
@@ -123,23 +126,14 @@ func createFromFile(file, ns string) error {
 
 // IngressFromManifest reads a .json/yaml file and returns the ingress in it.
 func IngressFromManifest(file, namespace string) (*networkingv1beta1.Ingress, error) {
-	var ing networkingv1beta1.Ingress
+	ing := new(networkingv1beta1.Ingress)
 
-	data, err := Read(file)
+	err := createFromFile(file, namespace, ing)
 	if err != nil {
-		return nil, err
-	}
-
-	json, err := utilyaml.ToJSON(data)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := runtime.DecodeInto(scheme.Codecs.UniversalDecoder(), json, &ing); err != nil {
 		return nil, err
 	}
 
 	ing.SetNamespace(namespace)
 
-	return &ing, nil
+	return ing, nil
 }

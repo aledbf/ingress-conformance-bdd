@@ -62,7 +62,6 @@ func WaitForService(c clientset.Interface, namespace, name string, exist bool, i
 func WaitForServiceEndpointsNum(c clientset.Interface, namespace, serviceName string,
 	expectNum int, interval, timeout time.Duration) error {
 	return wait.Poll(interval, timeout, func() (bool, error) {
-		klog.Infof("Waiting for amount of service:%s endpoints to be %d", serviceName, expectNum)
 		list, err := c.CoreV1().Endpoints(namespace).List(metav1.ListOptions{})
 		if err != nil {
 			return false, err

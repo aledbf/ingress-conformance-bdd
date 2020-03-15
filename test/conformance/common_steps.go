@@ -41,3 +41,14 @@ func responseStatusCodeIs(code int) error {
 
 	return nil
 }
+
+func creatingObjectsFromDirectory(path string) error {
+	var err error
+
+	state.Ingress, err = utils.CreateFromPath(KubeClient, path, state.Namespace, nil, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

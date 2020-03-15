@@ -12,17 +12,6 @@ import (
 
 type withoutHost struct{}
 
-func creatingObjectsFromDirectory(path string) error {
-	var err error
-
-	state.Ingress, err = utils.CreateFromPath(KubeClient, path, state.Namespace, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (f *withoutHost) sendGETHTTPRequest() error {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%v", state.Address), nil)
 	if err != nil {

@@ -116,6 +116,9 @@ func CreateTestNamespace(c kubernetes.Interface) (string, error) {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "ingress-conformance-",
+			Labels: map[string]string{
+				"app.kubernetes.io/name": "ingress-conformance",
+			},
 		},
 	}
 

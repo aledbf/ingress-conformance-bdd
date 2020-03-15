@@ -25,6 +25,8 @@ import (
 	"testing"
 
 	"github.com/cucumber/godog"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
@@ -79,6 +81,10 @@ func TestMain(m *testing.M) {
 	}
 
 	conformance.KubeClient = kubeClient
+
+	if err := cleanupNamespaces(kubeClient); err != nil {
+		klog.Fatalf("error deleting temporal namespaces: %v", err)
+	}
 
 	if godogOutput != "" {
 		file, err := os.Create(godogOutput)
@@ -152,4 +158,23 @@ func TestSuite(t *testing.T) {
 	if exitCode != successExitCode {
 		t.Error("Error encountered running the test suite")
 	}
+}
+
+func cleanupNamespaces(c kubernetes.Interface) error {
+	namespaces, err := c.CoreV1().Namespaces().List(metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/name=ingress-conformance",
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for _, namespace := range namespaces.Items {
+		err := utils.DeleteKubeNamespace(c, namespace.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

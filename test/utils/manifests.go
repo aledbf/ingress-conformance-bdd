@@ -90,8 +90,16 @@ func CreateFromPath(c clientset.Interface,
 		return nil, err
 	}
 
+	if ing.Annotations == nil {
+		ing.Annotations = map[string]string{}
+	}
+
 	if len(ingAnnotations) > 0 {
 		ing.Annotations = ingAnnotations
+	}
+
+	if IngressClassValue != "" {
+		ing.Annotations[IngressClassKey] = IngressClassValue
 	}
 
 	ing, err = c.NetworkingV1beta1().Ingresses(ns).Create(ing)
@@ -139,6 +147,14 @@ func IngressFromManifest(file, namespace string) (*networkingv1beta1.Ingress, er
 	}
 
 	ing.SetNamespace(namespace)
+
+	if ing.Annotations == nil {
+		ing.Annotations = map[string]string{}
+	}
+
+	if IngressClassValue != "" {
+		ing.Annotations[IngressClassKey] = IngressClassValue
+	}
 
 	return ing, nil
 }

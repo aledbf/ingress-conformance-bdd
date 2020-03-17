@@ -24,6 +24,11 @@ const (
 	secretFile                = "secret.yaml"
 )
 
+var (
+	// IngressClassValue sets the value of the class of Ingresses
+	IngressClassValue = ""
+)
+
 // CreateFromPath creates the Ingress and associated service/rc.
 // Required: ing.yaml, rc.yaml, svc.yaml must exist in manifestPath
 // Optional: secret.yaml, ingAnnotations, svcAnnotations

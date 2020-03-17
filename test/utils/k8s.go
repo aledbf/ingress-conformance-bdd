@@ -143,6 +143,26 @@ func DeleteKubeNamespace(c kubernetes.Interface, namespace string) error {
 	})
 }
 
+// CleanupNamespaces removes namespaces created by conformance tests
+func CleanupNamespaces(c kubernetes.Interface) error {
+	namespaces, err := c.CoreV1().Namespaces().List(metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/name=ingress-conformance",
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for _, namespace := range namespaces.Items {
+		err := DeleteKubeNamespace(c, namespace.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // IsRetryableAPIError checks if an API error allows retries or not
 func IsRetryableAPIError(err error) bool {
 	// These errors may indicate a transient error that we can retry in tests.
@@ -195,11 +215,11 @@ func createIngressWithRetries(c kubernetes.Interface, namespace string, obj *v1b
 }
 
 // WaitForIngressAddress waits for the Ingress to acquire an address.
-func WaitForIngressAddress(c clientset.Interface, ns, ingName, class string, timeout time.Duration) (string, error) {
+func WaitForIngressAddress(c clientset.Interface, ns, ingName string, timeout time.Duration) (string, error) {
 	var address string
 
 	err := wait.PollImmediate(IngressWaitInterval, timeout, func() (bool, error) {
-		ipOrNameList, err := getIngressAddress(c, ns, ingName, class)
+		ipOrNameList, err := getIngressAddress(c, ns, ingName)
 		if err != nil || len(ipOrNameList) == 0 {
 			if IsRetryableAPIError(err) {
 				return false, nil
@@ -216,10 +236,15 @@ func WaitForIngressAddress(c clientset.Interface, ns, ingName, class string, tim
 }
 
 // getIngressAddress returns the ips/hostnames associated with the Ingress.
-func getIngressAddress(c clientset.Interface, ns, name, class string) ([]string, error) {
+func getIngressAddress(c clientset.Interface, ns, name string) ([]string, error) {
 	ing, err := c.NetworkingV1beta1().Ingresses(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
+	}
+
+	class := ing.Annotations[IngressClassKey]
+	if class != IngressClassValue {
+		return nil, fmt.Errorf("Ingress with name %v has an invalid annotation (%v)", IngressClassValue, class)
 	}
 
 	var addresses []string

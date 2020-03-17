@@ -25,8 +25,6 @@ import (
 	"testing"
 
 	"github.com/cucumber/godog"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
@@ -72,6 +70,8 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&manifests, "manifests", "./manifests",
 		"Directory where manifests for test applications or scenerarios are located")
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
+	flag.StringVar(&utils.IngressClassValue, "ingress-class", "conformance",
+		"Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions")
 
 	flag.Parse()
 
@@ -82,7 +82,7 @@ func TestMain(m *testing.M) {
 
 	conformance.KubeClient = kubeClient
 
-	if err := cleanupNamespaces(kubeClient); err != nil {
+	if err := utils.CleanupNamespaces(kubeClient); err != nil {
 		klog.Fatalf("error deleting temporal namespaces: %v", err)
 	}
 
@@ -158,23 +158,4 @@ func TestSuite(t *testing.T) {
 	if exitCode != successExitCode {
 		t.Error("Error encountered running the test suite")
 	}
-}
-
-func cleanupNamespaces(c kubernetes.Interface) error {
-	namespaces, err := c.CoreV1().Namespaces().List(metav1.ListOptions{
-		LabelSelector: "app.kubernetes.io/name=ingress-conformance",
-	})
-
-	if err != nil {
-		return err
-	}
-
-	for _, namespace := range namespaces.Items {
-		err := utils.DeleteKubeNamespace(c, namespace.Name)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

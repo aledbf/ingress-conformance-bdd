@@ -137,6 +137,8 @@ func (r RootFileSource) DescribeFiles() string {
 	return description
 }
 
+// GetAbsPath returns the full path of a file
+// An error is returned for all fatal errors.
 func (r RootFileSource) GetAbsPath(filePath string) (string, error) {
 	var fullPath string
 

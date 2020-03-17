@@ -12,7 +12,7 @@ func ingressStatusIPOrFQDN() error {
 	}
 
 	address, err := utils.WaitForIngressAddress(KubeClient, state.Namespace,
-		state.Ingress.GetName(), "", utils.WaitForIngressAddressTimeout)
+		state.Ingress.GetName(), utils.WaitForIngressAddressTimeout)
 	if err != nil {
 		return err
 	}

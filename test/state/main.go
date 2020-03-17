@@ -70,6 +70,8 @@ func (f *Scenario) SendRequest(req *http.Request) error {
 	return nil
 }
 
+// AddRequestHeader Add adds the key, value pair to the header.
+// It appends to any existing values associated with key.
 func (f *Scenario) AddRequestHeader(header, value string) {
 	f.RequestHeaders.Add(header, value)
 }

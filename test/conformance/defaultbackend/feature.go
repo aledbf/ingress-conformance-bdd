@@ -1,5 +1,6 @@
 package defaultbackend
 
+//// start generated code
 import (
 	"fmt"
 	"net/http"
@@ -16,6 +17,8 @@ var (
 	// holds state of the scenarario
 	state *tstate.Scenario
 )
+
+//// end generated code
 
 func aNewRandomNamespace() error {
 	var err error

@@ -8,6 +8,6 @@ spec:
     http:
       paths:
       - backend:
-          serviceName: non-existing
+          serviceName: echoheaders
           servicePort: 80
-        path: /test
+        path: /

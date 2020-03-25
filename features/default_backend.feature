@@ -41,8 +41,7 @@ Feature: Default backend
 
         Scenario: Ingress with valid host and path /test should return 404 for unmapped path "/"
             Given a new random namespace
-              And reading Ingress from manifest "scenarios/004/ing.yaml"
-              And creating Ingress from manifest
+              And creating objects from directory "scenarios/004"
              When The ingress status shows the IP address or FQDN where is exposed
               And With path "/"
               And Header "Host" with value "foo.bar"

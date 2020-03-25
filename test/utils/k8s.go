@@ -30,6 +30,9 @@ const (
 	IngressWaitInterval = 5 * time.Second
 )
 
+// KubeClient Kubernetes API client
+var KubeClient *kubernetes.Clientset
+
 // WaitForService waits until the service appears (exist == true), or disappears (exist == false)
 func WaitForService(c clientset.Interface, namespace, name string, exist bool, interval, timeout time.Duration) error {
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {

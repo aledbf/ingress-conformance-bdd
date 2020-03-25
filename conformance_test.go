@@ -28,7 +28,6 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
-	"github.com/aledbf/ingress-conformance-bdd/test/conformance/defaultbackend"
 	"github.com/aledbf/ingress-conformance-bdd/test/conformance/withouthost"
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
@@ -143,7 +142,7 @@ func setupSuite() (*clientset.Clientset, error) {
 
 func TestSuite(t *testing.T) {
 	exitCode += godog.RunWithOptions("conformance", func(s *godog.Suite) {
-		defaultbackend.FeatureContext(s)
+		//defaultbackend.FeatureContext(s)
 		withouthost.FeatureContext(s)
 	}, godog.Options{
 		Format:        godogFormat,

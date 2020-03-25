@@ -2,7 +2,7 @@
 # And add help text after each target name starting with '\#\#'
 .DEFAULT_GOAL:=help
 
-.PHONY: help test build-image check-go-version run-conformance local-tests build-report show-report
+.PHONY: help test build-image check-go-version run-conformance local-tests build-report show-report local-cluster
 
 .EXPORT_ALL_VARIABLES:
 
@@ -59,3 +59,9 @@ show-report: build-report ## Starts NGINX locally to access reports using http:/
 		-v "$(PWD)/reports/output/cucumber-html-reports":/www:ro \
 		-v "$(PWD)/reports/output/nginx.conf":/etc/nginx/nginx.conf:ro \
 		nginx:1.17.8-alpine
+
+local-cluster: ## Create local cluster using kind
+	# create kind cluster or use an existing one
+	kind create cluster --config .github/kind.yaml || true
+	kubectl get nodes
+	curl https://gist.githubusercontent.com/aledbf/7e67bcb338fa6a1696eb5b101597224e/raw/6b106c9992c0f8937834113b8003be05950807d9/install-ingress-nginx.sh | bash

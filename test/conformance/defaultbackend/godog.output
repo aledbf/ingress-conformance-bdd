@@ -1,0 +1,59 @@
+// this is the output of godog features/default_backend.feature
+
+func aNewRandomNamespace() error {
+	return godog.ErrPending
+}
+
+func readingIngressFromManifest(arg1 string) error {
+	return godog.ErrPending
+}
+
+func creatingIngressFromManifestReturnsAnErrorMessageContaining(arg1 string) error {
+	return godog.ErrPending
+}
+
+func creatingIngressFromManifest() error {
+	return godog.ErrPending
+}
+
+func theIngressStatusShowsTheIPAddressOrFQDNWhereIsExposed() error {
+	return godog.ErrPending
+}
+
+func headerWithValue(arg1, arg2 string) error {
+	return godog.ErrPending
+}
+
+func sendHTTPRequestWithMethod(arg1 string) error {
+	return godog.ErrPending
+}
+
+func responseStatusCodeIs(arg1 int) error {
+	return godog.ErrPending
+}
+
+func sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs(arg1 int, arg2 *messages.PickleStepArgument_PickleTable) error {
+	return godog.ErrPending
+}
+
+func creatingObjectsFromDirectory(arg1 string) error {
+	return godog.ErrPending
+}
+
+func withPath(arg1 string) error {
+	return godog.ErrPending
+}
+
+func FeatureContext(s *godog.Suite) {
+	s.Step(`^a new random namespace$`, aNewRandomNamespace)
+	s.Step(`^reading Ingress from manifest "([^"]*)"$`, readingIngressFromManifest)
+	s.Step(`^creating Ingress from manifest returns an error message containing "([^"]*)"$`, creatingIngressFromManifestReturnsAnErrorMessageContaining)
+	s.Step(`^creating Ingress from manifest$`, creatingIngressFromManifest)
+	s.Step(`^The ingress status shows the IP address or FQDN where is exposed$`, theIngressStatusShowsTheIPAddressOrFQDNWhereIsExposed)
+	s.Step(`^Header "([^"]*)" with value "([^"]*)"$`, headerWithValue)
+	s.Step(`^Send HTTP request with method "([^"]*)"$`, sendHTTPRequestWithMethod)
+	s.Step(`^Response status code is (\d+)$`, responseStatusCodeIs)
+	s.Step(`^Send HTTP request with <path> and <method> checking response status code is (\d+):$`, sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs)
+	s.Step(`^creating objects from directory "([^"]*)"$`, creatingObjectsFromDirectory)
+	s.Step(`^With path "([^"]*)"$`, withPath)
+}

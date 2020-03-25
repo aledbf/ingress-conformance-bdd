@@ -61,7 +61,15 @@ show-report: build-report ## Starts NGINX locally to access reports using http:/
 		nginx:1.17.8-alpine
 
 local-cluster: ## Create local cluster using kind
-	# create kind cluster or use an existing one
+ifeq ($(shell which kind >/dev/null 2>&1 && kind version),)
+	$(error "kind is not installed. Use a package manager (i.e 'brew install kind') or visit the official site https://kind.sigs.k8s.io")
+endif
+ifeq ($(shell kind get clusters -q),)
+	echo "Creating kind cluster..."
 	kind create cluster --config .github/kind.yaml || true
 	kubectl get nodes
-	curl https://gist.githubusercontent.com/aledbf/7e67bcb338fa6a1696eb5b101597224e/raw/6b106c9992c0f8937834113b8003be05950807d9/install-ingress-nginx.sh | bash
+else
+	echo "Using existing kind cluster"
+endif
+	# Install ingress-nginx. THIS IS TEMPORAL
+	curl -sSL https://gist.githubusercontent.com/aledbf/7e67bcb338fa6a1696eb5b101597224e/raw/6b106c9992c0f8937834113b8003be05950807d9/install-ingress-nginx.sh | bash

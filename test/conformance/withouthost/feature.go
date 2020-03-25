@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/cucumber/godog"
+	"github.com/cucumber/messages-go/v10"
 
 	tstate "github.com/aledbf/ingress-conformance-bdd/test/state"
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
@@ -96,11 +97,11 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^Header "([^"]*)" is not present$`, headerIsNotPresent)
 
 	//// start generated code
-	s.BeforeScenario(func(this interface{}) {
+	s.BeforeScenario(func(this *messages.Pickle) {
 		state = tstate.New(nil)
 	})
 
-	s.AfterScenario(func(interface{}, error) {
+	s.AfterScenario(func(*messages.Pickle, error) {
 		// delete namespace an all the content
 		_ = utils.DeleteKubeNamespace(utils.KubeClient, state.Namespace)
 	})

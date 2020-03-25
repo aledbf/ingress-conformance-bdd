@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/cucumber/godog"
-	"github.com/cucumber/godog/gherkin"
+	"github.com/cucumber/messages-go/v10"
 
 	tstate "github.com/aledbf/ingress-conformance-bdd/test/state"
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
@@ -117,7 +117,7 @@ func sendHTTPRequestWithMethod(arg1 string) error {
 	return nil
 }
 
-func sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs(arg1 int, arg2 *gherkin.DataTable) error {
+func sendHTTPRequestWithPathAndMethodCheckingResponseStatusCodeIs(arg1 int, arg2 *messages.PickleStepArgument_PickleTable) error {
 	if len(arg2.Rows) < 1 {
 		return fmt.Errorf("expected a table with at least one row")
 	}
@@ -170,11 +170,11 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^With path "([^"]*)"$`, withPath)
 
 	//// start generated code
-	s.BeforeScenario(func(this interface{}) {
+	s.BeforeScenario(func(this *messages.Pickle) {
 		state = tstate.New(nil)
 	})
 
-	s.AfterScenario(func(interface{}, error) {
+	s.AfterScenario(func(*messages.Pickle, error) {
 		// delete namespace an all the content
 		_ = utils.DeleteKubeNamespace(utils.KubeClient, state.Namespace)
 	})

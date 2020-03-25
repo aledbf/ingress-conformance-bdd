@@ -21,13 +21,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/cucumber/godog"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
+	"github.com/aledbf/ingress-conformance-bdd/test/conformance/defaultbackend"
 	"github.com/aledbf/ingress-conformance-bdd/test/conformance/withouthost"
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
@@ -44,7 +44,6 @@ var (
 	godogTags          string
 	godogStopOnFailure bool
 	godogNoColors      bool
-	godogFeatures      string
 	godogOutput        string
 
 	manifests string
@@ -65,8 +64,6 @@ func TestMain(m *testing.M) {
 	flag.StringVar(&godogTags, "tags", "", "Tags for conformance test")
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")
-	flag.StringVar(&godogFeatures, "features", "./features",
-		"Directory or individual files with extension .feature to run")
 	flag.StringVar(&manifests, "manifests", "./manifests",
 		"Directory where manifests for test applications or scenerarios are located")
 	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
@@ -140,21 +137,29 @@ func setupSuite() (*clientset.Clientset, error) {
 	return c, nil
 }
 
-func TestSuite(t *testing.T) {
-	exitCode += godog.RunWithOptions("conformance", func(s *godog.Suite) {
-		//defaultbackend.FeatureContext(s)
-		withouthost.FeatureContext(s)
-	}, godog.Options{
-		Format:        godogFormat,
-		Paths:         strings.Split(godogFeatures, ","),
-		Tags:          godogTags,
-		StopOnFailure: godogStopOnFailure,
-		NoColors:      godogNoColors,
-		Output:        output,
-		Concurrency:   runTestsSerially,
-	})
+var (
+	features = map[string]func(*godog.Suite){
+		"features/default_backend.feature": defaultbackend.FeatureContext,
+		"features/without_host.feature":    withouthost.FeatureContext,
+	}
+)
 
-	if exitCode != successExitCode {
-		t.Error("Error encountered running the test suite")
+func TestSuite(t *testing.T) {
+	for feature, featureContext := range features {
+		exitCode += godog.RunWithOptions("conformance", func(s *godog.Suite) {
+			featureContext(s)
+		}, godog.Options{
+			Format:        godogFormat,
+			Paths:         []string{feature},
+			Tags:          godogTags,
+			StopOnFailure: godogStopOnFailure,
+			NoColors:      godogNoColors,
+			Output:        output,
+			Concurrency:   runTestsSerially,
+		})
+
+		if exitCode != successExitCode {
+			t.Fatalf("Error encountered running the test suite")
+		}
 	}
 }

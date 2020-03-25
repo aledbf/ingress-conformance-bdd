@@ -50,11 +50,11 @@ $(document).ready(function() {
     var chartData = {
         datasets: [{
             data: [
-                30,
+                11,
                 0,
                 0,
                 0,
-                0
+                18
             ],
             backgroundColor: [
                 "#00B000",
@@ -93,7 +93,7 @@ $(document).ready(function() {
                         var allData = data.datasets[tooltipItem.datasetIndex].data;
                         var tooltipLabel = data.labels[tooltipItem.index];
                         var tooltipData = allData[tooltipItem.index];
-                        var tooltipPercentage = Math.round(10000 * tooltipData / 30) / 100;
+                        var tooltipPercentage = Math.round(10000 * tooltipData / 29) / 100;
                         return tooltipLabel + ": " + tooltipData + " (" + tooltipPercentage + "%)";
                     }
                 }
@@ -106,8 +106,8 @@ $(document).ready(function() {
     var chartData = {
         datasets: [{
             data: [
-                5,
-                0
+                1,
+                4
             ],
             backgroundColor: [
                 "#00B000",
@@ -153,8 +153,8 @@ $(document).ready(function() {
     var chartData = {
         datasets: [{
             data: [
-                   2,
-                   0
+                   1,
+                   1
                ],
                backgroundColor: [
                 "#00B000",
@@ -231,7 +231,7 @@ $(document).ready(function() {
     <tr class="info">
       <td>Ingress Conformance Test</td>
         <td>1</td>
-      <td>18 Mar 2020, 20:10</td>
+      <td>25 Mar 2020, 23:14</td>
     </tr>
   </tbody>
 </table>
@@ -338,19 +338,19 @@ $(document).ready(function() {
       <tr>
         <td class="tagname"><a href="report-feature_2022162379.html">Default backend</a></td>
 
-        <td      class="passed"    >24</td>
+        <td      class="passed"    >5</td>
         <td >0</td>
         <td >0</td>
         <td >0</td>
-        <td >0</td>
-        <td class="total">24</td>
+        <td   class="undefined" >18</td>
+        <td class="total">23</td>
 
-        <td  class="passed"    >4</td>
         <td >0</td>
+        <td  class="failed"    >4</td>
         <td class="total">4</td>
 
-        <td class="duration" data-value="25067095172">25.067</td>
-        <td class="passed">Passed</td>
+        <td class="duration" data-value="6136283183">6.136</td>
+        <td class="failed">Failed</td>
       </tr>
       <tr>
         <td class="tagname"><a href="report-feature_1_3511184728.html">Ingress without host field</a></td>
@@ -366,7 +366,7 @@ $(document).ready(function() {
         <td >0</td>
         <td class="total">1</td>
 
-        <td class="duration" data-value="16061333753">16.061</td>
+        <td class="duration" data-value="14051393431">14.051</td>
         <td class="passed">Passed</td>
       </tr>
   </tbody>
@@ -374,33 +374,33 @@ $(document).ready(function() {
   <tfoot class="total">
     <tr>
       <td></td>
-      <td>30</td>
+      <td>11</td>
       <td>0</td>
       <td>0</td>
       <td>0</td>
-      <td>0</td>
-      <td>30</td>
+      <td>18</td>
+      <td>29</td>
 
-      <td>5</td>
-      <td>0</td>
+      <td>1</td>
+      <td>4</td>
       <td>5</td>
 
-      <td class="duration">41.128</td>
+      <td class="duration">20.187</td>
       <td>2</td>
     </tr>
     <tr>
       <td></td>
-      <td>100.00%</td>
+      <td>37.93%</td>
       <td>0.00%</td>
       <td>0.00%</td>
       <td>0.00%</td>
-      <td>0.00%</td>
+      <td>62.07%</td>
       <td></td>
-      <td>100.00%</td>
-      <td>0.00%</td>
+      <td>20.00%</td>
+      <td>80.00%</td>
       <td></td>
       <td></td>
-      <td>100.00%</td>
+      <td>50.00%</td>
     </tr>
   </tfoot>
 </table>

@@ -2,7 +2,7 @@
 # And add help text after each target name starting with '\#\#'
 .DEFAULT_GOAL:=help
 
-.PHONY: help test build-image check-go-version run-conformance local-tests build-report show-report local-cluster
+.PHONY: help test build-image check-go-version run-conformance local-tests build-report show-report local-cluster codegen verify-codegen
 
 .EXPORT_ALL_VARIABLES:
 
@@ -73,3 +73,9 @@ else
 endif
 	# Install ingress-nginx. THIS IS TEMPORAL
 	curl -sSL https://gist.githubusercontent.com/aledbf/7e67bcb338fa6a1696eb5b101597224e/raw/6b106c9992c0f8937834113b8003be05950807d9/install-ingress-nginx.sh | bash
+
+codegen: ## Generate or update missing Go code defined in feature files
+	@go run hack/codegen.go -update -conformance-path=test/conformance features/default_backend.feature
+
+verify-codegen: ## Verifies if generated Go code is in sync with feature files
+	@go run hack/codegen.go -conformance-path=test/conformance features/default_backend.feature

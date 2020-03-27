@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -14,6 +13,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"unicode"
@@ -22,6 +22,7 @@ import (
 	"github.com/cucumber/gherkin-go/v11"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/iancoleman/orderedmap"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // Function holds the definition of a function in a go file or godog step
@@ -93,10 +94,10 @@ func processFeature(path, conformance string, update bool, template *template.Te
 	isGoFileOk := utils.Exists(goFile)
 
 	// TODO: replace map
-	data := map[string]interface{}{
-		"package":     packageName,
-		"featureFile": path,
-		"features":    feature,
+	mapping := &Mapping{
+		Package:     packageName,
+		FeatureFile: path,
+		Features:    feature,
 	}
 
 	// 8. Extract functions from go source code
@@ -106,31 +107,93 @@ func processFeature(path, conformance string, update bool, template *template.Te
 			return fmt.Errorf("extracting go functions: %w", err)
 		}
 
-		data["goFile"] = goFile
-		data["goDefinitions"] = goFunctions
+		mapping.GoFile = goFile
+		mapping.GoDefinitions = goFunctions
 	}
 
-	prettyJSON, err := json.MarshalIndent(data, "", " ")
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("%s\n", string(prettyJSON))
+	/*
+		// TODO: remove
+		prettyJSON, err := json.MarshalIndent(mapping, "", " ")
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s\n", string(prettyJSON))
+	*/
 
 	// 9. check if feature file is in sync with go code
-	// 10. if update is set
-	// 10.1 check signatures are ok
-	// 10.2 add missing methods
-	if update {
+	isInSync := true
+	isSignaturesOk := true
 
+	var newFunctions sets.String
+
+	if !isGoFileOk {
+		isInSync = false
+	} else {
+		inFeatures := sets.NewString()
+		inGo := sets.NewString()
+
+		for _, feature := range mapping.Features {
+			inFeatures.Insert(feature.Name)
+		}
+
+		for _, gofunc := range mapping.GoDefinitions {
+			inGo.Insert(gofunc.Name)
+		}
+
+		if newFunctions = inFeatures.Difference(inGo); newFunctions.Len() > 0 {
+			isInSync = false
+		}
+
+		continueLoop := true
+		for _, feature := range mapping.Features {
+			for _, gofunc := range mapping.GoDefinitions {
+				if feature.Name != gofunc.Name {
+					continue
+				}
+
+				if !reflect.DeepEqual(feature.Args, gofunc.Args) {
+					isSignaturesOk = false
+					continueLoop = false
+					break
+				}
+			}
+
+			if !continueLoop {
+				break
+			}
+		}
+	}
+
+	// 10 check signatures are ok
+	if !isSignaturesOk {
+		return fmt.Errorf("source file %v has a different signature/s (expected X but X is defined)", mapping.GoFile)
+	}
+
+	// 11. if in sync, nothing to do
+	if isInSync {
+		return nil
+	}
+
+	if newFunctions.Len() > 0 {
+		log.Printf("Feature file %v contains %v new functions", mapping.FeatureFile, newFunctions.Len())
+	}
+
+	// 10. if update is set
+	if update {
+		//
 	}
 
 	return nil
 }
 
-type codeTemplate struct {
-	Package   string
-	Functions []Function
+type Mapping struct {
+	Package string
+
+	FeatureFile string
+	Features    []Function
+
+	GoFile        string
+	GoDefinitions []Function
 }
 
 var templateHelperFuncs = template.FuncMap{

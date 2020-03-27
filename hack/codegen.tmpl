@@ -1,0 +1,50 @@
+package {{ .Package }}
+
+import (
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/cucumber/godog"
+	"github.com/cucumber/messages-go/v10"
+
+	tstate "github.com/aledbf/ingress-conformance-bdd/test/state"
+	"github.com/aledbf/ingress-conformance-bdd/test/utils"
+)
+
+var (
+	// holds state of the scenarario
+	state *tstate.Scenario
+)
+
+{{ range .Functions }}func {{ .Method }}({{ .Args }}) error {
+	return godog.ErrPending
+}
+
+{{end}}
+
+func FeatureContext(s *godog.Suite) { {{ range . }}
+	s.Step({{ backticked .Expr }}, {{ .Method }}){{end}}
+
+	s.BeforeScenario(func(this *messages.Pickle) {
+		state = tstate.New(nil)
+	})
+
+	s.AfterScenario(func(*messages.Pickle, error) {
+		// delete namespace an all the content
+		_ = utils.DeleteKubeNamespace(utils.KubeClient, state.Namespace)
+	})
+}
+
+var snippetHelperFuncs = template.FuncMap{
+	"backticked": func(s string) string {
+		return "`" + s + "`"
+	},
+}
+
+var undefinedSnippetsTpl = template.Must(template.New("snippets").Funcs(snippetHelperFuncs).Parse()
+
+type Template struct {
+    Package strings
+    Functions []Function
+}

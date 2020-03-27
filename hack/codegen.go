@@ -9,6 +9,7 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"html/template"
 	"log"
 	"os"
 	"path"
@@ -37,9 +38,11 @@ type Function struct {
 type FunctionArgs map[string]string
 
 type generateOptions struct {
+	Verbose         bool
 	Update          bool
 	Features        []string
 	ConformancePath string
+	Template        string
 }
 
 // default options only checks if generated code is up to date
@@ -48,44 +51,66 @@ func defaultOptions() *generateOptions {
 	return &generateOptions{
 		Update:          false,
 		ConformancePath: "test/conformance",
+		Template:        "hack/codegen.template",
 	}
 }
 
 func main() {
 	o := defaultOptions()
+	flag.BoolVar(&o.Verbose, "verbose", o.Verbose, "")
 	flag.BoolVar(&o.Update, "update", o.Update, "update files in place in case of missing steps or method definitions")
 	flag.StringVar(&o.ConformancePath, "conformance-path", o.ConformancePath, "path to conformance test package location")
+	flag.StringVar(&o.Template, "template", o.Template, "template file to generate go source file")
 
 	flag.Parse()
 
+	// 1. verify flags
 	o.Features = flag.CommandLine.Args()
 	if len(o.Features) == 0 {
-		fmt.Println("Usage: generate [-update=false] [-conformance-path=test/conformance] [features]")
+		fmt.Println("Usage: generate [-update=false] [-verbose=false] [-conformance-path=test/conformance] [-template=hack/generate.tmpl] [features]")
 		fmt.Println()
 		fmt.Println("Example: generate features/default_backend.feature")
 		flag.CommandLine.Usage()
 		os.Exit(1)
 	}
 
-	// TODO: if features is a directory, iterate and search for files with extension .feature
+	// 2. verify template file
+	codeTmpl, err := template.New("template").Funcs(templateHelperFuncs).Parse(o.Template)
+	if err != nil {
+		log.Fatal("Unexpected error parsing template: %v", err)
+	}
+	fmt.Print(codeTmpl)
 
+	// 3. if features is a directory, iterate and search for files with extension .feature
+
+	// 4. iterate feature files
 	for _, featurePath := range o.Features {
+		// 5. parse feature file
 		feature, err := parseFeature(featurePath)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		// TODO: search for go file for the feature
-		// create if does not exists?
-		functions, err := extractFuncs(path.Join(o.ConformancePath, "/defaultbackend/feature.go"))
-		if err != nil {
-			log.Fatal(err)
-		}
+		// 6. generate package name to use
+		packageName := generatePackage(featurePath)
+		// 7. check if go source file exists
+		goFile := path.Join(o.ConformancePath, packageName, "feature.go")
+		isGoFileOk := utils.Exists(goFile)
 
 		data := map[string]interface{}{
-			"file":          featurePath,
-			"feature":       feature,
-			"goDefinitions": functions,
+			"featureFile": featurePath,
+			"features":    feature,
+		}
+
+		// 8. Extract functions from go source code
+		if isGoFileOk {
+			goFunctions, err := extractFuncs(goFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			data["goFile"] = goFile
+			data["goDefinitions"] = goFunctions
 		}
 
 		prettyJSON, err := json.MarshalIndent(data, "", " ")
@@ -97,13 +122,20 @@ func main() {
 	}
 }
 
+type codeTemplate struct {
+	Package   string
+	Functions []Function
+}
+
+var templateHelperFuncs = template.FuncMap{
+	"backticked": func(s string) string {
+		return "`" + s + "`"
+	},
+}
+
 // parseFeature parses a godog feature file returning the unique
 // steps definitions
 func parseFeature(path string) ([]Function, error) {
-	if exists := utils.Exists(path); !exists {
-		return nil, fmt.Errorf("file %v does not exists", path)
-	}
-
 	data, err := utils.Read(path)
 	if err != nil {
 		return nil, err
@@ -180,15 +212,15 @@ func parseSteps(steps []*messages.Pickle_PickleStep, funcDefs []Function) []Func
 
 // extractFuncs reads a file containing go source code and returns
 // the functions defined in the file.
-func extractFuncs(path string) ([]Function, error) {
-	if !strings.HasSuffix(path, ".go") {
+func extractFuncs(filePath string) ([]Function, error) {
+	if !strings.HasSuffix(filePath, ".go") {
 		return nil, fmt.Errorf("only files with go extension are valid")
 	}
 
 	funcs := []Function{}
 
 	fset := token.NewFileSet()
-	node, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
+	node, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +232,7 @@ func extractFuncs(path string) ([]Function, error) {
 			return true
 		}
 
-		args := new(FunctionArgs)
+		args := make(FunctionArgs)
 		for _, p := range fn.Type.Params.List {
 			var typeNameBuf bytes.Buffer
 			err := printer.Fprint(&typeNameBuf, fset, p.Type)
@@ -273,11 +305,21 @@ func parseStepArgs(exp string, argument *messages.PickleStepArgument) FunctionAr
 		}
 	}
 
-	stepArgs := new(FunctionArgs)
+	stepArgs := make(FunctionArgs)
 	for i, v := range args {
 		k := fmt.Sprintf("arg%d, ", i+1)
 		stepArgs[k] = v
 	}
 
 	return stepArgs
+}
+
+// generatePackage returns the name of the
+// package to use using the feature filename
+func generatePackage(filePath string) string {
+	base := path.Base(filePath)
+	base = strings.ToLower(base)
+	base = strings.ReplaceAll(base, "_", "")
+	base = strings.ReplaceAll(base, ".feature", "")
+	return base
 }

@@ -153,7 +153,6 @@ func processFeature(path, conformance string, update bool, template *template.Te
 
 				if !reflect.DeepEqual(feature.Args, gofunc.Args) {
 					signatureChanges = append(signatureChanges, SignatureChange{
-						File:     mapping.GoFile,
 						Function: gofunc.Name,
 						Have:     argsFromMap(gofunc.Args),
 						Want:     argsFromMap(feature.Args),
@@ -175,10 +174,10 @@ func processFeature(path, conformance string, update bool, template *template.Te
 		var argBuf bytes.Buffer
 		for _, sc := range signatureChanges {
 			argBuf.WriteString(fmt.Sprintf(`
-	function %v
-		have %v
-		want %v
-`, sc.File, sc.Have, sc.Want))
+function %v
+	have %v
+	want %v
+`, sc.Function, sc.Have, sc.Want))
 		}
 
 		return fmt.Errorf("source file %v has a different signature/s:\n %v", mapping.GoFile, argBuf.String())
@@ -211,8 +210,8 @@ type Mapping struct {
 	GoDefinitions []Function
 }
 
+// SignatureChange holds information about the definition of a go function
 type SignatureChange struct {
-	File     string
 	Function string
 	Have     string
 	Want     string

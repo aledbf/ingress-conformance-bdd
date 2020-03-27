@@ -21,6 +21,7 @@ import (
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 	"github.com/cucumber/gherkin-go/v11"
 	"github.com/cucumber/messages-go/v10"
+	"github.com/iancoleman/orderedmap"
 )
 
 // Function holds the definition of a function in a go file or godog step
@@ -30,13 +31,10 @@ type Function struct {
 	// Expr Regexp to use in godog Step definition
 	Expr string
 	// Args function arguments
-	Args FunctionArgs
+	// k = name of the argument
+	// v = type of the argument
+	Args *orderedmap.OrderedMap
 }
-
-// FunctionArgs holds a function arguments using a k,v pair.
-// k = name of the argument
-// v = type of the argument
-type FunctionArgs map[string]string
 
 func main() {
 	var (
@@ -187,7 +185,7 @@ func extractFuncs(filePath string) ([]Function, error) {
 			return true
 		}
 
-		args := make(FunctionArgs)
+		args := orderedmap.New()
 		for _, p := range fn.Type.Params.List {
 			var typeNameBuf bytes.Buffer
 
@@ -197,7 +195,7 @@ func extractFuncs(filePath string) ([]Function, error) {
 				return false
 			}
 
-			args[p.Names[0].String()] = typeNameBuf.String()
+			args.Set(p.Names[0].String(), typeNameBuf.String())
 		}
 
 		// Go functions do not have an expression
@@ -236,7 +234,7 @@ const (
 // parseStepArgs extracts arguments from an expression defined in a step RegExp.
 // This code was extracted from
 // https://github.com/cucumber/godog/blob/4da503aab2d0b71d380fbe8c48a6af9f729b6f5a/undefined_snippets_gen.go#L41
-func parseStepArgs(exp string, argument *messages.PickleStepArgument) FunctionArgs {
+func parseStepArgs(exp string, argument *messages.PickleStepArgument) *orderedmap.OrderedMap {
 	var (
 		args      []string
 		pos       int
@@ -276,10 +274,10 @@ func parseStepArgs(exp string, argument *messages.PickleStepArgument) FunctionAr
 		}
 	}
 
-	stepArgs := make(FunctionArgs)
+	stepArgs := orderedmap.New()
 	for i, v := range args {
 		k := fmt.Sprintf("arg%d, ", i+1)
-		stepArgs[k] = v
+		stepArgs.Set(k, v)
 	}
 
 	return stepArgs
@@ -310,7 +308,6 @@ func parseSteps(steps []*messages.Pickle_PickleStep, funcDefs []Function) []Func
 		name = strings.TrimSpace(snippetMethodName.ReplaceAllString(name, ""))
 
 		var words []string
-
 		for i, w := range strings.Split(name, " ") {
 			switch {
 			case i != 0:
@@ -338,7 +335,6 @@ func parseSteps(steps []*messages.Pickle_PickleStep, funcDefs []Function) []Func
 
 		if !found {
 			args := parseStepArgs(expr, step.Argument)
-
 			funcDefs = append(funcDefs, Function{Name: name, Expr: expr, Args: args})
 		}
 	}

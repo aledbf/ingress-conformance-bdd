@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"unicode"
@@ -46,7 +47,7 @@ func main() {
 		templatePath    string
 	)
 
-	flag.BoolVar(&verbose, "verbose", false, "")
+	flag.BoolVar(&verbose, "verbose", false, "enable verbose output")
 	flag.BoolVar(&update, "update", false, "update files in place in case of missing steps or method definitions")
 	flag.StringVar(&conformancePath, "conformance-path", "test/conformance", "path to conformance test package location")
 	flag.StringVar(&templatePath, "template", "hack/codegen.template", "template file to generate go source file")
@@ -56,9 +57,9 @@ func main() {
 	// 1. verify flags
 	features = flag.CommandLine.Args()
 	if len(features) == 0 {
-		fmt.Println("Usage: generate [-update=false] [-verbose=false] [-conformance-path=test/conformance] [-template=hack/generate.tmpl] [features]")
+		fmt.Println("Usage: codegen [-update=false] [-verbose=false] [-conformance-path=test/conformance] [-template=hack/generate.tmpl] [features]")
 		fmt.Println()
-		fmt.Println("Example: generate features/default_backend.feature")
+		fmt.Println("Example: codegen features/default_backend.feature")
 		flag.CommandLine.Usage()
 		os.Exit(1)
 	}
@@ -80,22 +81,23 @@ func main() {
 	}
 }
 
-func processFeature(featurePath, conformancePath string, update bool, template *template.Template) error {
+func processFeature(path, conformance string, update bool, template *template.Template) error {
 	// 5. parse feature file
-	feature, err := parseFeature(featurePath)
+	feature, err := parseFeature(path)
 	if err != nil {
 		return fmt.Errorf("parsing feature file: %w", err)
 	}
 
 	// 6. generate package name to use
-	packageName := generatePackage(featurePath)
+	packageName := generatePackage(path)
 	// 7. check if go source file exists
-	goFile := path.Join(conformancePath, packageName, "feature.go")
+	goFile := filepath.Join(conformance, packageName, "feature.go")
 	isGoFileOk := utils.Exists(goFile)
 
+	// TODO: replace map
 	data := map[string]interface{}{
 		"package":     packageName,
-		"featureFile": featurePath,
+		"featureFile": path,
 		"features":    feature,
 	}
 
@@ -162,6 +164,127 @@ func parseFeature(path string) ([]Function, error) {
 	return def, nil
 }
 
+// extractFuncs reads a file containing go source code and returns
+// the functions defined in the file.
+func extractFuncs(filePath string) ([]Function, error) {
+	if !strings.HasSuffix(filePath, ".go") {
+		return nil, fmt.Errorf("only files with go extension are valid")
+	}
+
+	funcs := []Function{}
+
+	fset := token.NewFileSet()
+
+	node, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+	if err != nil {
+		return nil, err
+	}
+
+	var printErr error
+	ast.Inspect(node, func(n ast.Node) bool {
+		fn, ok := n.(*ast.FuncDecl)
+		if !ok {
+			return true
+		}
+
+		args := make(FunctionArgs)
+		for _, p := range fn.Type.Params.List {
+			var typeNameBuf bytes.Buffer
+
+			err := printer.Fprint(&typeNameBuf, fset, p.Type)
+			if err != nil {
+				printErr = err
+				return false
+			}
+
+			args[p.Names[0].String()] = typeNameBuf.String()
+		}
+
+		// Go functions do not have an expression
+		funcs = append(funcs, Function{Name: fn.Name.Name, Args: args})
+
+		return true
+	})
+
+	if printErr != nil {
+		return nil, printErr
+	}
+
+	return funcs, nil
+}
+
+// generatePackage returns the name of the
+// package to use using the feature filename
+func generatePackage(filePath string) string {
+	base := path.Base(filePath)
+	base = strings.ToLower(base)
+	base = strings.ReplaceAll(base, "_", "")
+	base = strings.ReplaceAll(base, ".feature", "")
+
+	return base
+}
+
+//
+// Code below this comment comes from github.com/cucumber/godog
+// (code defined in private methods)
+
+const (
+	numberGroup = "(\\d+)"
+	stringGroup = "\"([^\"]*)\""
+)
+
+// parseStepArgs extracts arguments from an expression defined in a step RegExp.
+// This code was extracted from
+// https://github.com/cucumber/godog/blob/4da503aab2d0b71d380fbe8c48a6af9f729b6f5a/undefined_snippets_gen.go#L41
+func parseStepArgs(exp string, argument *messages.PickleStepArgument) FunctionArgs {
+	var (
+		args      []string
+		pos       int
+		breakLoop bool
+	)
+
+	for !breakLoop {
+		part := exp[pos:]
+		ipos := strings.Index(part, numberGroup)
+		spos := strings.Index(part, stringGroup)
+
+		switch {
+		case spos == -1 && ipos == -1:
+			breakLoop = true
+		case spos == -1:
+			pos += ipos + len(numberGroup)
+			args = append(args, "int")
+		case ipos == -1:
+			pos += spos + len(stringGroup)
+			args = append(args, "string")
+		case ipos < spos:
+			pos += ipos + len(numberGroup)
+			args = append(args, "int")
+		case spos < ipos:
+			pos += spos + len(stringGroup)
+			args = append(args, "string")
+		}
+	}
+
+	if argument != nil {
+		if argument.GetDocString() != nil {
+			args = append(args, "*messages.PickleStepArgument_PickleDocString")
+		}
+
+		if argument.GetDataTable() != nil {
+			args = append(args, "*messages.PickleStepArgument_PickleTable")
+		}
+	}
+
+	stepArgs := make(FunctionArgs)
+	for i, v := range args {
+		k := fmt.Sprintf("arg%d, ", i+1)
+		stepArgs[k] = v
+	}
+
+	return stepArgs
+}
+
 // some snippet formatting regexps
 var snippetExprCleanup = regexp.MustCompile("([\\/\\[\\]\\(\\)\\\\^\\$\\.\\|\\?\\*\\+\\'])")
 var snippetExprQuoted = regexp.MustCompile("(\\W|^)\"(?:[^\"]*)\"(\\W|$)")
@@ -221,121 +344,4 @@ func parseSteps(steps []*messages.Pickle_PickleStep, funcDefs []Function) []Func
 	}
 
 	return funcDefs
-}
-
-// extractFuncs reads a file containing go source code and returns
-// the functions defined in the file.
-func extractFuncs(filePath string) ([]Function, error) {
-	if !strings.HasSuffix(filePath, ".go") {
-		return nil, fmt.Errorf("only files with go extension are valid")
-	}
-
-	funcs := []Function{}
-
-	fset := token.NewFileSet()
-
-	node, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
-	if err != nil {
-		return nil, err
-	}
-
-	var printErr error
-	ast.Inspect(node, func(n ast.Node) bool {
-		fn, ok := n.(*ast.FuncDecl)
-		if !ok {
-			return true
-		}
-
-		args := make(FunctionArgs)
-		for _, p := range fn.Type.Params.List {
-			var typeNameBuf bytes.Buffer
-
-			err := printer.Fprint(&typeNameBuf, fset, p.Type)
-			if err != nil {
-				printErr = err
-				return false
-			}
-
-			args[p.Names[0].String()] = typeNameBuf.String()
-		}
-
-		// Go functions do not have an expression
-		funcs = append(funcs, Function{Name: fn.Name.Name, Args: args})
-
-		return true
-	})
-
-	if printErr != nil {
-		return nil, printErr
-	}
-
-	return funcs, nil
-}
-
-const (
-	numberGroup = "(\\d+)"
-	stringGroup = "\"([^\"]*)\""
-)
-
-// parseStepArgs extracts arguments from an expression defined in a step RegExp.
-// This code was extracted from
-// https://github.com/cucumber/godog/blob/4da503aab2d0b71d380fbe8c48a6af9f729b6f5a/undefined_snippets_gen.go#L41
-func parseStepArgs(exp string, argument *messages.PickleStepArgument) FunctionArgs {
-	var (
-		args      []string
-		pos       int
-		breakLoop bool
-	)
-
-	for !breakLoop {
-		part := exp[pos:]
-		ipos := strings.Index(part, numberGroup)
-		spos := strings.Index(part, stringGroup)
-
-		switch {
-		case spos == -1 && ipos == -1:
-			breakLoop = true
-		case spos == -1:
-			pos += ipos + len(numberGroup)
-			args = append(args, "int")
-		case ipos == -1:
-			pos += spos + len(stringGroup)
-			args = append(args, "string")
-		case ipos < spos:
-			pos += ipos + len(numberGroup)
-			args = append(args, "int")
-		case spos < ipos:
-			pos += spos + len(stringGroup)
-			args = append(args, "string")
-		}
-	}
-
-	if argument != nil {
-		if argument.GetDocString() != nil {
-			args = append(args, "*messages.PickleStepArgument_PickleDocString")
-		}
-
-		if argument.GetDataTable() != nil {
-			args = append(args, "*messages.PickleStepArgument_PickleTable")
-		}
-	}
-
-	stepArgs := make(FunctionArgs)
-	for i, v := range args {
-		k := fmt.Sprintf("arg%d, ", i+1)
-		stepArgs[k] = v
-	}
-
-	return stepArgs
-}
-
-// generatePackage returns the name of the
-// package to use using the feature filename
-func generatePackage(filePath string) string {
-	base := path.Base(filePath)
-	base = strings.ToLower(base)
-	base = strings.ReplaceAll(base, "_", "")
-	base = strings.ReplaceAll(base, ".feature", "")
-
-	return base
 }

@@ -27,11 +27,14 @@ type Function struct {
 	Name string
 	// Expr Regexp to use in godog Step definition
 	Expr string
-	// Args function arguments using a k,v pair.
-	// k = name of the argument
-	// v = type of the argument
-	Args map[string]string
+	// Args function arguments
+	Args FunctionArgs
 }
+
+// FunctionArgs holds a function arguments using a k,v pair.
+// k = name of the argument
+// v = type of the argument
+type FunctionArgs map[string]string
 
 type generateOptions struct {
 	Update          bool
@@ -39,6 +42,8 @@ type generateOptions struct {
 	ConformancePath string
 }
 
+// default options only checks if generated code is up to date
+// and go feature files are in subdirectory test/conformance
 func defaultOptions() *generateOptions {
 	return &generateOptions{
 		Update:          false,
@@ -92,6 +97,8 @@ func main() {
 	}
 }
 
+// parseFeature parses a godog feature file returning the unique
+// steps definitions
 func parseFeature(path string) ([]Function, error) {
 	if exists := utils.Exists(path); !exists {
 		return nil, fmt.Errorf("file %v does not exists", path)
@@ -122,6 +129,8 @@ var snippetExprQuoted = regexp.MustCompile("(\\W|^)\"(?:[^\"]*)\"(\\W|$)")
 var snippetMethodName = regexp.MustCompile("[^a-zA-Z\\_\\ ]")
 var snippetNumbers = regexp.MustCompile("(\\d+)")
 
+// parseSteps converts a string step definition in a different one valid as a regular
+// expression that can be used in a go Step definition. This original code is located in
 // https://github.com/cucumber/godog/blob/4da503aab2d0b71d380fbe8c48a6af9f729b6f5a/fmt.go#L457
 func parseSteps(steps []*messages.Pickle_PickleStep, funcDefs []Function) []Function {
 	var index int
@@ -169,10 +178,11 @@ func parseSteps(steps []*messages.Pickle_PickleStep, funcDefs []Function) []Func
 	return funcDefs
 }
 
-// extractFuncs
+// extractFuncs reads a file containing go source code and returns
+// the functions defined in the file.
 func extractFuncs(path string) ([]Function, error) {
 	if !strings.HasSuffix(path, ".go") {
-		return nil, fmt.Errorf("only files with go extensions are valid")
+		return nil, fmt.Errorf("only files with go extension are valid")
 	}
 
 	funcs := []Function{}
@@ -190,7 +200,7 @@ func extractFuncs(path string) ([]Function, error) {
 			return true
 		}
 
-		args := map[string]string{}
+		args := new(FunctionArgs)
 		for _, p := range fn.Type.Params.List {
 			var typeNameBuf bytes.Buffer
 			err := printer.Fprint(&typeNameBuf, fset, p.Type)
@@ -204,6 +214,7 @@ func extractFuncs(path string) ([]Function, error) {
 
 		// Go functions do not have an expression
 		funcs = append(funcs, Function{Name: fn.Name.Name, Args: args})
+
 		return true
 	})
 
@@ -219,8 +230,10 @@ const (
 	stringGroup = "\"([^\"]*)\""
 )
 
-// from https://github.com/cucumber/godog/blob/4da503aab2d0b71d380fbe8c48a6af9f729b6f5a/undefined_snippets_gen.go#L41
-func parseStepArgs(exp string, argument *messages.PickleStepArgument) map[string]string {
+// parseStepArgs extracts arguments from an expression defined in a step RegExp.
+// This code was extracted from
+// https://github.com/cucumber/godog/blob/4da503aab2d0b71d380fbe8c48a6af9f729b6f5a/undefined_snippets_gen.go#L41
+func parseStepArgs(exp string, argument *messages.PickleStepArgument) FunctionArgs {
 	var (
 		args      []string
 		pos       int
@@ -260,7 +273,7 @@ func parseStepArgs(exp string, argument *messages.PickleStepArgument) map[string
 		}
 	}
 
-	stepArgs := map[string]string{}
+	stepArgs := new(FunctionArgs)
 	for i, v := range args {
 		k := fmt.Sprintf("arg%d, ", i+1)
 		stepArgs[k] = v

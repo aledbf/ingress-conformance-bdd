@@ -122,7 +122,7 @@ func processFeature(path, conformance string, update bool, template *template.Te
 
 	// 9. check if feature file is in sync with go code
 	isInSync := true
-	isSignaturesOk := true
+	signatureChanges := []SignatureChange{}
 
 	var newFunctions sets.String
 
@@ -152,7 +152,13 @@ func processFeature(path, conformance string, update bool, template *template.Te
 				}
 
 				if !reflect.DeepEqual(feature.Args, gofunc.Args) {
-					isSignaturesOk = false
+					signatureChanges = append(signatureChanges, SignatureChange{
+						File:     mapping.GoFile,
+						Function: gofunc.Name,
+						Have:     argsFromMap(gofunc.Args),
+						Want:     argsFromMap(feature.Args),
+					})
+
 					continueLoop = false
 					break
 				}
@@ -165,8 +171,17 @@ func processFeature(path, conformance string, update bool, template *template.Te
 	}
 
 	// 10 check signatures are ok
-	if !isSignaturesOk {
-		return fmt.Errorf("source file %v has a different signature/s (expected X but X is defined)", mapping.GoFile)
+	if len(signatureChanges) != 0 {
+		var argBuf bytes.Buffer
+		for _, sc := range signatureChanges {
+			argBuf.WriteString(fmt.Sprintf(`
+	function %v
+		have %v
+		want %v
+`, sc.File, sc.Have, sc.Want))
+		}
+
+		return fmt.Errorf("source file %v has a different signature/s:\n %v", mapping.GoFile, argBuf.String())
 	}
 
 	// 11. if in sync, nothing to do
@@ -194,6 +209,13 @@ type Mapping struct {
 
 	GoFile        string
 	GoDefinitions []Function
+}
+
+type SignatureChange struct {
+	File     string
+	Function string
+	Have     string
+	Want     string
 }
 
 var templateHelperFuncs = template.FuncMap{
@@ -283,6 +305,26 @@ func generatePackage(filePath string) string {
 	base = strings.ReplaceAll(base, ".feature", "")
 
 	return base
+}
+
+func argsFromMap(args *orderedmap.OrderedMap) string {
+	s := "("
+	for _, k := range args.Keys() {
+		v, ok := args.Get(k)
+		if !ok {
+			continue
+		}
+
+		s = s + fmt.Sprintf("%v, ", v)
+	}
+
+	if len(args.Keys()) > 0 {
+		s = s[0 : len(s)-2]
+	}
+
+	s = s + ")"
+
+	return s
 }
 
 //

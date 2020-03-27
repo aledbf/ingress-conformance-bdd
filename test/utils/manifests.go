@@ -27,6 +27,8 @@ const (
 var (
 	// IngressClassValue sets the value of the class of Ingresses
 	IngressClassValue = ""
+
+	ManifestPath string
 )
 
 // CreateFromPath creates the Ingress and associated service/rc.
@@ -35,12 +37,12 @@ var (
 // If ingAnnotations is specified it will overwrite any annotations in ing.yaml
 // If svcAnnotations is specified it will overwrite any annotations in svc.yaml
 func CreateFromPath(c clientset.Interface,
-	manifestPath, ns string,
+	manifest, ns string,
 	ingAnnotations map[string]string,
 	svcAnnotations map[string]string) (*networkingv1beta1.Ingress, error) {
 
 	rc := new(corev1.ReplicationController)
-	err := createFromFile(filepath.Join(manifestPath, replicationControllerFile), ns, rc)
+	err := createFromFile(filepath.Join(ManifestPath, manifest, replicationControllerFile), ns, rc)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +53,7 @@ func CreateFromPath(c clientset.Interface,
 	}
 
 	svc := new(corev1.Service)
-	err = createFromFile(filepath.Join(manifestPath, serviceFile), ns, svc)
+	err = createFromFile(filepath.Join(ManifestPath, manifest, serviceFile), ns, svc)
 	if err != nil {
 		return nil, err
 	}
@@ -70,10 +72,10 @@ func CreateFromPath(c clientset.Interface,
 		return nil, err
 	}
 
-	secretPath := filepath.Join(manifestPath, secretFile)
+	secretPath := filepath.Join(ManifestPath, manifest, secretFile)
 	if Exists(secretPath) {
 		secret := new(corev1.Secret)
-		err = createFromFile(filepath.Join(manifestPath, secretFile), ns, secret)
+		err = createFromFile(secretPath, ns, secret)
 		if err != nil {
 			return nil, err
 		}
@@ -85,7 +87,7 @@ func CreateFromPath(c clientset.Interface,
 	}
 
 	ing := new(networkingv1beta1.Ingress)
-	err = createFromFile(filepath.Join(manifestPath, ingressFile), ns, ing)
+	err = createFromFile(filepath.Join(ManifestPath, manifest, ingressFile), ns, ing)
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +112,7 @@ func CreateFromPath(c clientset.Interface,
 	return ing, nil
 }
 
-func createFromFile(path, ns string, obj runtime.Object) error {
-	file, err := filesource.GetAbsPath(path)
-	if err != nil {
-		return err
-	}
-
+func createFromFile(file, ns string, obj runtime.Object) error {
 	if exists := Exists(file); !exists {
 		return fmt.Errorf("file %v does not exists", file)
 	}
@@ -140,8 +137,7 @@ func createFromFile(path, ns string, obj runtime.Object) error {
 // IngressFromManifest reads a .json/yaml file and returns the ingress in it.
 func IngressFromManifest(file, namespace string) (*networkingv1beta1.Ingress, error) {
 	ing := new(networkingv1beta1.Ingress)
-
-	err := createFromFile(file, namespace, ing)
+	err := createFromFile(filepath.Join(ManifestPath, file), namespace, ing)
 	if err != nil {
 		return nil, err
 	}

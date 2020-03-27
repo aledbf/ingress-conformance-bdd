@@ -72,7 +72,17 @@ func TestMain(m *testing.M) {
 
 	flag.Parse()
 
-	var err error
+	manifestsPath, err := filepath.Abs(manifests)
+	if err != nil {
+		klog.Fatal(err)
+	}
+
+	if !utils.IsDir(manifestsPath) {
+		klog.Fatalf("The specified value in the flag --manifests-directory (%v) is not a directory", manifests)
+	}
+
+	utils.ManifestPath = manifestsPath
+
 	utils.KubeClient, err = setupSuite()
 	if err != nil {
 		klog.Fatal(err)
@@ -91,24 +101,6 @@ func TestMain(m *testing.M) {
 		defer file.Close()
 		output = file
 	}
-
-	manifestsPath, err := filepath.Abs(manifests)
-	if err != nil {
-		klog.Fatal(err)
-	}
-
-	info, err := os.Stat(manifestsPath)
-	if err != nil {
-		klog.Fatal(err)
-	}
-
-	if !info.IsDir() {
-		klog.Fatalf("The specified value in the flag --manifests-directory (%v) is not a directory", manifests)
-	}
-
-	utils.SetFileSource(utils.RootFileSource{
-		Root: manifestsPath,
-	})
 
 	if code := m.Run(); code > exitCode {
 		exitCode = code

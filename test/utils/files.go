@@ -25,6 +25,10 @@ import (
 	"path/filepath"
 )
 
+func init() {
+	filesource = RootFileSource{"."}
+}
+
 var filesource FileSource
 
 // SetFileSource registers a provider for files that may be needed at

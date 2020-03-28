@@ -44,33 +44,26 @@ func main() {
 		update          bool
 		features        []string
 		conformancePath string
-		templatePath    string
 	)
 
 	flag.BoolVar(&verbose, "verbose", false, "enable verbose output")
 	flag.BoolVar(&update, "update", false, "update files in place in case of missing steps or method definitions")
 	flag.StringVar(&conformancePath, "conformance-path", "test/conformance", "path to conformance test package location")
-	flag.StringVar(&templatePath, "template", "hack/codegen.tmpl", "template file to generate go source file")
 
 	flag.Parse()
 
 	// 1. verify flags
 	features = flag.CommandLine.Args()
 	if len(features) == 0 {
-		fmt.Println("Usage: codegen [-update=false] [-verbose=false] [-conformance-path=test/conformance] [-template=hack/generate.tmpl] [features]")
+		fmt.Println("Usage: codegen [-update=false] [-verbose=false] [-conformance-path=test/conformance] [features]")
 		fmt.Println()
 		fmt.Println("Example: codegen features/default_backend.feature")
 		flag.CommandLine.Usage()
 		os.Exit(1)
 	}
 
-	// 2. verify template file
-	data, err := ioutil.ReadFile(templatePath)
-	if err != nil {
-		log.Fatalf("unexpected error reading template %v: %v", templatePath, err)
-	}
-
-	codeTmpl, err := template.New("template").Funcs(templateHelperFuncs).Parse(string(data))
+	// 2. parse template
+	codeTmpl, err := template.New("template").Funcs(templateFuncs).Parse(goTemplate)
 	if err != nil {
 		log.Fatalf("Unexpected error parsing template: %v", err)
 	}
@@ -99,7 +92,6 @@ func processFeature(path, conformance string, update bool, template *template.Te
 	goFile := filepath.Join(conformance, packageName, "feature.go")
 	isGoFileOk := utils.Exists(goFile)
 
-	// TODO: replace map
 	mapping := &Mapping{
 		Package:      packageName,
 		FeatureFile:  path,
@@ -163,8 +155,8 @@ func processFeature(path, conformance string, update bool, template *template.Te
 				if !reflect.DeepEqual(feature.Args, gofunc.Args) {
 					signatureChanges = append(signatureChanges, SignatureChange{
 						Function: gofunc.Name,
-						Have:     argsFromMap(gofunc.Args),
-						Want:     argsFromMap(feature.Args),
+						Have:     argsFromMap(gofunc.Args, true),
+						Want:     argsFromMap(feature.Args, true),
 					})
 
 					continueLoop = false
@@ -205,7 +197,6 @@ function %v
 			return err
 		}
 
-		log.Printf("#%v#\n", buf.String())
 		// 10. if update is set
 		if update {
 			err := ioutil.WriteFile(mapping.GoFile, buf.Bytes(), 0644)
@@ -246,7 +237,7 @@ type SignatureChange struct {
 	Want     string
 }
 
-var templateHelperFuncs = template.FuncMap{
+var templateFuncs = template.FuncMap{
 	"backticked": func(s string) string {
 		return "`" + s + "`"
 	},
@@ -255,6 +246,41 @@ var templateHelperFuncs = template.FuncMap{
 	},
 	"argsFromMap": argsFromMap,
 }
+
+const goTemplate = `package {{ .Package }}
+
+import (
+	"github.com/cucumber/godog"
+	"github.com/cucumber/messages-go/v10"
+
+	tstate "github.com/aledbf/ingress-conformance-bdd/test/state"
+	"github.com/aledbf/ingress-conformance-bdd/test/utils"
+)
+
+var (
+	// holds state of the scenarario
+	state *tstate.Scenario
+)
+
+{{ range .NewFunctions }}func {{ .Name }}{{ argsFromMap .Args false }} error {
+	return godog.ErrPending
+}
+
+{{end}}
+
+func FeatureContext(s *godog.Suite) { {{ range .NewFunctions }}
+	s.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
+
+	s.BeforeScenario(func(this *messages.Pickle) {
+		state = tstate.New(nil)
+	})
+
+	s.AfterScenario(func(*messages.Pickle, error) {
+		// delete namespace an all the content
+		_ = utils.DeleteKubeNamespace(utils.KubeClient, state.Namespace)
+	})
+}
+`
 
 // parseFeature parses a godog feature file returning the unique
 // steps definitions
@@ -303,7 +329,7 @@ func extractFuncs(filePath string) ([]Function, error) {
 		}
 
 		args := orderedmap.New()
-		for _, p := range fn.Type.Params.List {
+		for index, p := range fn.Type.Params.List {
 			var typeNameBuf bytes.Buffer
 
 			err := printer.Fprint(&typeNameBuf, fset, p.Type)
@@ -312,7 +338,12 @@ func extractFuncs(filePath string) ([]Function, error) {
 				return false
 			}
 
-			args.Set(p.Names[0].String(), typeNameBuf.String())
+			argName := fmt.Sprintf("arg%d", index+1)
+			if len(p.Names) != 0 {
+				argName = p.Names[0].String()
+			}
+
+			args.Set(argName, typeNameBuf.String())
 		}
 
 		// Go functions do not have an expression
@@ -339,27 +370,29 @@ func generatePackage(filePath string) string {
 	return base
 }
 
-func argsFromMap(args *orderedmap.OrderedMap) string {
+func argsFromMap(args *orderedmap.OrderedMap, onlyType bool) string {
 	s := "("
+
 	for _, k := range args.Keys() {
 		v, ok := args.Get(k)
 		if !ok {
 			continue
 		}
 
-		s = s + fmt.Sprintf("%v, ", v)
+		if onlyType {
+			s = s + fmt.Sprintf("%v, ", v)
+		} else {
+			s = s + fmt.Sprintf("%v %v, ", k, v)
+		}
 	}
 
 	if len(args.Keys()) > 0 {
 		s = s[0 : len(s)-2]
 	}
 
-	s = s + ")"
-
-	return s
+	return s + ")"
 }
 
-//
 // Code below this comment comes from github.com/cucumber/godog
 // (code defined in private methods)
 
@@ -413,7 +446,7 @@ func parseStepArgs(exp string, argument *messages.PickleStepArgument) *orderedma
 
 	stepArgs := orderedmap.New()
 	for i, v := range args {
-		k := fmt.Sprintf("arg%d, ", i+1)
+		k := fmt.Sprintf("arg%d", i+1)
 		stepArgs.Set(k, v)
 	}
 

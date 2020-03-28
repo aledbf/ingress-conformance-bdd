@@ -14,13 +14,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"strings"
 	"unicode"
 
 	"github.com/cucumber/gherkin-go/v11"
 	"github.com/cucumber/messages-go/v10"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/iancoleman/orderedmap"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -159,7 +160,9 @@ func processFeature(path, conformance string, update bool, template *template.Te
 					continue
 				}
 
-				if !reflect.DeepEqual(feature.Args, gofunc.Args) {
+				if !cmp.Equal(feature.Args, gofunc.Args,
+					cmpopts.IgnoreUnexported(orderedmap.OrderedMap{}),
+				) {
 					signatureChanges = append(signatureChanges, SignatureChange{
 						Function: gofunc.Name,
 						Have:     argsFromMap(gofunc.Args, true),

@@ -19,11 +19,12 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 	"github.com/cucumber/gherkin-go/v11"
 	"github.com/cucumber/messages-go/v10"
 	"github.com/iancoleman/orderedmap"
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
 
 // Function holds the definition of a function in a go file or godog step
@@ -40,13 +41,11 @@ type Function struct {
 
 func main() {
 	var (
-		verbose         bool
 		update          bool
 		features        []string
 		conformancePath string
 	)
 
-	flag.BoolVar(&verbose, "verbose", false, "enable verbose output")
 	flag.BoolVar(&update, "update", false, "update files in place in case of missing steps or method definitions")
 	flag.StringVar(&conformancePath, "conformance-path", "test/conformance", "path to conformance test package location")
 
@@ -55,7 +54,7 @@ func main() {
 	// 1. verify flags
 	features = flag.CommandLine.Args()
 	if len(features) == 0 {
-		fmt.Println("Usage: codegen [-update=false] [-verbose=false] [-conformance-path=test/conformance] [features]")
+		fmt.Println("Usage: codegen [-update=false] [-conformance-path=test/conformance] [features]")
 		fmt.Println()
 		fmt.Println("Example: codegen features/default_backend.feature")
 		flag.CommandLine.Usage()
@@ -69,6 +68,14 @@ func main() {
 	}
 
 	// 3. if features is a directory, iterate and search for files with extension .feature
+	if len(features) == 1 && utils.IsDir(features[0]) {
+		root := filepath.Dir(features[0])
+		features = []string{}
+		err := filepath.Walk(root, visitDir(&features))
+		if err != nil {
+			log.Fatalf("Unexpected error reading directory %v: %v", root, err)
+		}
+	}
 
 	// 4. iterate feature files
 	for _, path := range features {
@@ -391,6 +398,21 @@ func argsFromMap(args *orderedmap.OrderedMap, onlyType bool) string {
 	}
 
 	return s + ")"
+}
+
+func visitDir(files *[]string) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if filepath.Ext(path) != ".feature" {
+			return nil
+		}
+
+		*files = append(*files, path)
+		return nil
+	}
 }
 
 // Code below this comment comes from github.com/cucumber/godog

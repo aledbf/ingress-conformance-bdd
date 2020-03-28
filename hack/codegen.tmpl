@@ -1,10 +1,6 @@
 package {{ .Package }}
 
 import (
-	"fmt"
-	"net/http"
-	"strings"
-
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v10"
 
@@ -17,14 +13,14 @@ var (
 	state *tstate.Scenario
 )
 
-{{ range .Functions }}func {{ .Method }}({{ .Args }}) error {
+{{ range .NewFunctions }}func {{ .Name }}{{ argsFromMap .Args }} error {
 	return godog.ErrPending
 }
 
 {{end}}
 
-func FeatureContext(s *godog.Suite) { {{ range . }}
-	s.Step({{ backticked .Expr }}, {{ .Method }}){{end}}
+func FeatureContext(s *godog.Suite) { {{ range .NewFunctions }}
+	s.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
 
 	s.BeforeScenario(func(this *messages.Pickle) {
 		state = tstate.New(nil)
@@ -34,17 +30,4 @@ func FeatureContext(s *godog.Suite) { {{ range . }}
 		// delete namespace an all the content
 		_ = utils.DeleteKubeNamespace(utils.KubeClient, state.Namespace)
 	})
-}
-
-var snippetHelperFuncs = template.FuncMap{
-	"backticked": func(s string) string {
-		return "`" + s + "`"
-	},
-}
-
-var undefinedSnippetsTpl = template.Must(template.New("snippets").Funcs(snippetHelperFuncs).Parse()
-
-type Template struct {
-    Package strings
-    Functions []Function
 }

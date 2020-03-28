@@ -9,6 +9,7 @@ import (
 	"go/printer"
 	"go/token"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -49,7 +50,7 @@ func main() {
 	flag.BoolVar(&verbose, "verbose", false, "enable verbose output")
 	flag.BoolVar(&update, "update", false, "update files in place in case of missing steps or method definitions")
 	flag.StringVar(&conformancePath, "conformance-path", "test/conformance", "path to conformance test package location")
-	flag.StringVar(&templatePath, "template", "hack/codegen.template", "template file to generate go source file")
+	flag.StringVar(&templatePath, "template", "hack/codegen.tmpl", "template file to generate go source file")
 
 	flag.Parse()
 
@@ -64,7 +65,12 @@ func main() {
 	}
 
 	// 2. verify template file
-	codeTmpl, err := template.New("template").Funcs(templateHelperFuncs).Parse(templatePath)
+	data, err := ioutil.ReadFile(templatePath)
+	if err != nil {
+		log.Fatalf("unexpected error reading template %v: %v", templatePath, err)
+	}
+
+	codeTmpl, err := template.New("template").Funcs(templateHelperFuncs).Parse(string(data))
 	if err != nil {
 		log.Fatalf("Unexpected error parsing template: %v", err)
 	}
@@ -82,7 +88,7 @@ func main() {
 
 func processFeature(path, conformance string, update bool, template *template.Template) error {
 	// 5. parse feature file
-	feature, err := parseFeature(path)
+	featureSteps, err := parseFeature(path)
 	if err != nil {
 		return fmt.Errorf("parsing feature file: %w", err)
 	}
@@ -95,9 +101,11 @@ func processFeature(path, conformance string, update bool, template *template.Te
 
 	// TODO: replace map
 	mapping := &Mapping{
-		Package:     packageName,
-		FeatureFile: path,
-		Features:    feature,
+		Package:      packageName,
+		FeatureFile:  path,
+		Features:     featureSteps,
+		NewFunctions: featureSteps,
+		GoFile:       goFile,
 	}
 
 	// 8. Extract functions from go source code
@@ -107,28 +115,15 @@ func processFeature(path, conformance string, update bool, template *template.Te
 			return fmt.Errorf("extracting go functions: %w", err)
 		}
 
-		mapping.GoFile = goFile
 		mapping.GoDefinitions = goFunctions
 	}
 
-	/*
-		// TODO: remove
-		prettyJSON, err := json.MarshalIndent(mapping, "", " ")
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s\n", string(prettyJSON))
-	*/
-
 	// 9. check if feature file is in sync with go code
-	isInSync := true
+	isInSync := false
+
 	signatureChanges := []SignatureChange{}
 
-	var newFunctions sets.String
-
-	if !isGoFileOk {
-		isInSync = false
-	} else {
+	if isGoFileOk {
 		inFeatures := sets.NewString()
 		inGo := sets.NewString()
 
@@ -140,8 +135,22 @@ func processFeature(path, conformance string, update bool, template *template.Te
 			inGo.Insert(gofunc.Name)
 		}
 
-		if newFunctions = inFeatures.Difference(inGo); newFunctions.Len() > 0 {
+		if newFunctions := inFeatures.Difference(inGo); newFunctions.Len() > 0 {
+			log.Printf("Feature file %v contains %v new functions", mapping.FeatureFile, newFunctions.Len())
+
 			isInSync = false
+
+			var funcs []Function
+			for _, f := range newFunctions.List() {
+				for _, feature := range mapping.Features {
+					if feature.Name == f {
+						funcs = append(funcs, feature)
+						break
+					}
+				}
+			}
+
+			mapping.NewFunctions = funcs
 		}
 
 		continueLoop := true
@@ -169,7 +178,7 @@ func processFeature(path, conformance string, update bool, template *template.Te
 		}
 	}
 
-	// 10 check signatures are ok
+	// 10. check signatures are ok
 	if len(signatureChanges) != 0 {
 		var argBuf bytes.Buffer
 		for _, sc := range signatureChanges {
@@ -188,13 +197,31 @@ function %v
 		return nil
 	}
 
-	if newFunctions.Len() > 0 {
-		log.Printf("Feature file %v contains %v new functions", mapping.FeatureFile, newFunctions.Len())
+	if !isGoFileOk {
+		log.Printf("Generating new go file %v...", mapping.GoFile)
+		buf := bytes.NewBuffer(make([]byte, 0))
+		err := template.Execute(buf, mapping)
+		if err != nil {
+			return err
+		}
+
+		log.Printf("#%v#\n", buf.String())
+		// 10. if update is set
+		if update {
+			err := ioutil.WriteFile(mapping.GoFile, buf.Bytes(), 0644)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
+
+	log.Printf("Updating go file %v...", mapping.GoFile)
+	log.Printf("%v\n", mapping.NewFunctions)
 
 	// 10. if update is set
 	if update {
-		//
 	}
 
 	return nil
@@ -208,6 +235,8 @@ type Mapping struct {
 
 	GoFile        string
 	GoDefinitions []Function
+
+	NewFunctions []Function
 }
 
 // SignatureChange holds information about the definition of a go function
@@ -221,6 +250,10 @@ var templateHelperFuncs = template.FuncMap{
 	"backticked": func(s string) string {
 		return "`" + s + "`"
 	},
+	"unescape": func(s string) template.HTML {
+		return template.HTML(s)
+	},
+	"argsFromMap": argsFromMap,
 }
 
 // parseFeature parses a godog feature file returning the unique

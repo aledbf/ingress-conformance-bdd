@@ -67,7 +67,7 @@ func creatingObjectsFromDirectory(path string) error {
 	return nil
 }
 
-func readingIngressFromManifest(file string, d string) error {
+func readingIngressFromManifest(file string) error {
 	var err error
 
 	state.Ingress, err = utils.IngressFromManifest(file, state.Namespace)

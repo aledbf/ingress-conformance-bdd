@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/parser"
 	"go/printer"
 	"go/token"
@@ -27,18 +28,6 @@ import (
 
 	"github.com/aledbf/ingress-conformance-bdd/test/utils"
 )
-
-// Function holds the definition of a function in a go file or godog step
-type Function struct {
-	// Name
-	Name string
-	// Expr Regexp to use in godog Step definition
-	Expr string
-	// Args function arguments
-	// k = name of the argument
-	// v = type of the argument
-	Args *orderedmap.OrderedMap
-}
 
 func main() {
 	var (
@@ -137,8 +126,7 @@ func processFeature(path, conformance string, update bool, template *template.Te
 		}
 
 		if newFunctions := inFeatures.Difference(inGo); newFunctions.Len() > 0 {
-			log.Printf("Feature file %v contains %v new functions", mapping.FeatureFile, newFunctions.Len())
-
+			log.Printf("Feature file %v contains %v new function/s", mapping.FeatureFile, newFunctions.Len())
 			isInSync = false
 
 			var funcs []Function
@@ -156,8 +144,7 @@ func processFeature(path, conformance string, update bool, template *template.Te
 			mapping.NewFunctions = []Function{}
 		}
 
-		continueLoop := true
-
+	FeaturesLoop:
 		for _, feature := range mapping.Features {
 			for _, gofunc := range mapping.GoDefinitions {
 				if feature.Name != gofunc.Name {
@@ -173,14 +160,8 @@ func processFeature(path, conformance string, update bool, template *template.Te
 						Want:     argsFromMap(feature.Args, true),
 					})
 
-					continueLoop = false
-
-					break
+					break FeaturesLoop
 				}
-			}
-
-			if !continueLoop {
-				break
 			}
 		}
 	}
@@ -204,6 +185,7 @@ function %v
 		return nil
 	}
 
+	// 12. New go feature file
 	if !isGoFileOk {
 		log.Printf("Generating new go file %v...", mapping.GoFile)
 		buf := bytes.NewBuffer(make([]byte, 0))
@@ -224,13 +206,36 @@ function %v
 		return nil
 	}
 
-	// 10. if update is set
+	if len(mapping.NewFunctions) == 0 {
+		return nil
+	}
+
+	// 13. if update is set
 	if update {
 		log.Printf("Updating go file %v...", mapping.GoFile)
-		log.Printf("%v\n", mapping.NewFunctions)
+		err := updateGoTestFile(mapping.GoFile, mapping.NewFunctions)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(mapping.NewFunctions) != 0 {
+		return fmt.Errorf("generated code is out of date")
 	}
 
 	return nil
+}
+
+// Function holds the definition of a function in a go file or godog step
+type Function struct {
+	// Name
+	Name string
+	// Expr Regexp to use in godog Step definition
+	Expr string
+	// Args function arguments
+	// k = name of the argument
+	// v = type of the argument
+	Args *orderedmap.OrderedMap
 }
 
 type Mapping struct {
@@ -273,7 +278,6 @@ import (
 )
 
 var (
-	// holds state of the scenarario
 	state *tstate.Scenario
 )
 
@@ -327,14 +331,13 @@ func extractFuncs(filePath string) ([]Function, error) {
 		return nil, fmt.Errorf("only files with go extension are valid")
 	}
 
-	funcs := []Function{}
-
 	fset := token.NewFileSet()
-
 	node, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
 	if err != nil {
 		return nil, err
 	}
+
+	funcs := []Function{}
 
 	var printErr error
 	ast.Inspect(node, func(n ast.Node) bool {
@@ -372,6 +375,115 @@ func extractFuncs(filePath string) ([]Function, error) {
 	}
 
 	return funcs, nil
+}
+
+func updateGoTestFile(filePath string, newFuncs []Function) error {
+	fileSet := token.NewFileSet()
+	node, err := parser.ParseFile(fileSet, filePath, nil, parser.ParseComments)
+	if err != nil {
+		return err
+	}
+
+	var featureFunc *ast.FuncDecl
+	ast.Inspect(node, func(n ast.Node) bool {
+		fn, ok := n.(*ast.FuncDecl)
+		if !ok {
+			return true
+		}
+
+		if fn.Name.Name == "FeatureContext" {
+			featureFunc = fn
+		}
+
+		return true
+	})
+
+	if featureFunc == nil {
+		return fmt.Errorf("file %v does not contains a FeatureFunct function", filePath)
+	}
+
+	// Add new functions
+	astf, err := toAstFunctions(newFuncs)
+	if err != nil {
+		return err
+	}
+
+	node.Decls = append(node.Decls, astf...)
+
+	// Update steps in FeatureContext
+	astSteps, err := toContextStepsfuncs(newFuncs)
+	if err != nil {
+		return err
+	}
+
+	featureFunc.Body.List = append(astSteps, featureFunc.Body.List...)
+
+	var buffer bytes.Buffer
+	if err = format.Node(&buffer, fileSet, node); err != nil {
+		return fmt.Errorf("error formatting file %v: %w", filePath, err)
+	}
+
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return fmt.Errorf("error reading file %v: %w", filePath, err)
+	}
+
+	return ioutil.WriteFile(filePath, buffer.Bytes(), fileInfo.Mode())
+}
+
+func toContextStepsfuncs(funcs []Function) ([]ast.Stmt, error) {
+	astStepsTpl := `
+package codegen
+func FeatureContext() { {{ range . }}
+	s.Step({{ backticked .Expr | unescape }}, {{ .Name }}){{end}}
+}
+`
+	astFile, err := astFromTemplate(astStepsTpl, funcs)
+	if err != nil {
+		return nil, err
+	}
+
+	f := astFile.Decls[0].(*ast.FuncDecl)
+
+	return f.Body.List, nil
+}
+
+func toAstFunctions(funcs []Function) ([]ast.Decl, error) {
+	astFuncTpl := `
+package codegen
+{{ range . }}func {{ .Name }}{{ argsFromMap .Args false }} error {
+	return godog.ErrPending
+}
+
+{{end}}
+`
+	astFile, err := astFromTemplate(astFuncTpl, funcs)
+	if err != nil {
+		return nil, err
+	}
+
+	return astFile.Decls, nil
+}
+
+func astFromTemplate(astFuncTpl string, funcs []Function) (*ast.File, error) {
+	buf := bytes.NewBuffer(make([]byte, 0))
+	astFuncs, err := template.New("ast").Funcs(templateFuncs).Parse(astFuncTpl)
+	if err != nil {
+		return nil, err
+	}
+
+	err = astFuncs.Execute(buf, funcs)
+	if err != nil {
+		return nil, err
+	}
+
+	fset := token.NewFileSet()
+	astFile, err := parser.ParseFile(fset, "src.go", buf.String(), parser.ParseComments)
+	if err != nil {
+		return nil, err
+	}
+
+	return astFile, nil
 }
 
 // generatePackage returns the name of the

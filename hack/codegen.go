@@ -15,14 +15,13 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"unicode"
 
 	"github.com/cucumber/gherkin-go/v11"
 	"github.com/cucumber/messages-go/v10"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/iancoleman/orderedmap"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -151,9 +150,12 @@ func processFeature(path, conformance string, update bool, template *template.Te
 					continue
 				}
 
-				if !cmp.Equal(feature.Args, gofunc.Args,
-					cmpopts.IgnoreUnexported(orderedmap.OrderedMap{}),
-				) {
+				// We need to compare function arguments checking only
+				// the number and type. Is not possible to rely in the name
+				// in the go code.
+				featKeys := feature.Args.Keys()
+				goKeys := gofunc.Args.Keys()
+				if len(featKeys) != len(goKeys) {
 					signatureChanges = append(signatureChanges, SignatureChange{
 						Function: gofunc.Name,
 						Have:     argsFromMap(gofunc.Args, true),
@@ -162,6 +164,22 @@ func processFeature(path, conformance string, update bool, template *template.Te
 
 					break FeaturesLoop
 				}
+
+				for index, k := range featKeys {
+					fv, _ := feature.Args.Get(k)
+					gv, _ := gofunc.Args.Get(goKeys[index])
+
+					if !reflect.DeepEqual(fv, gv) {
+						signatureChanges = append(signatureChanges, SignatureChange{
+							Function: gofunc.Name,
+							Have:     argsFromMap(gofunc.Args, true),
+							Want:     argsFromMap(feature.Args, true),
+						})
+
+						break FeaturesLoop
+					}
+				}
+
 			}
 		}
 	}
@@ -359,8 +377,9 @@ func extractFuncs(filePath string) ([]Function, error) {
 			return true
 		}
 
+		index := 0
 		args := orderedmap.New()
-		for index, p := range fn.Type.Params.List {
+		for _, p := range fn.Type.Params.List {
 			var typeNameBuf bytes.Buffer
 
 			err := printer.Fprint(&typeNameBuf, fset, p.Type)
@@ -369,12 +388,19 @@ func extractFuncs(filePath string) ([]Function, error) {
 				return false
 			}
 
-			argName := fmt.Sprintf("arg%d", index+1)
-			if len(p.Names) != 0 {
-				argName = p.Names[0].String()
+			if len(p.Names) == 0 {
+				argName := fmt.Sprintf("arg%d", index+1)
+				args.Set(argName, typeNameBuf.String())
+
+				index++
+				continue
 			}
 
-			args.Set(argName, typeNameBuf.String())
+			for _, ag := range p.Names {
+				argName := ag.String()
+				args.Set(argName, typeNameBuf.String())
+				index++
+			}
 		}
 
 		// Go functions do not have an expression

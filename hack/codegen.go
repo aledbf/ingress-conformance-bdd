@@ -151,6 +151,8 @@ func processFeature(path, conformance string, update bool, template *template.Te
 			}
 
 			mapping.NewFunctions = funcs
+		} else {
+			mapping.NewFunctions = []Function{}
 		}
 
 		continueLoop := true

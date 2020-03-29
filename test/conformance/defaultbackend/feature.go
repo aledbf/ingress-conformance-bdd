@@ -1,6 +1,5 @@
 package defaultbackend
 
-//// start generated code
 import (
 	"fmt"
 	"net/http"
@@ -17,8 +16,6 @@ var (
 	// holds state of the scenarario
 	state *tstate.Scenario
 )
-
-//// end generated code
 
 func aNewRandomNamespace() error {
 	var err error
@@ -169,7 +166,6 @@ func FeatureContext(s *godog.Suite) {
 	s.Step(`^creating objects from directory "([^"]*)"$`, creatingObjectsFromDirectory)
 	s.Step(`^With path "([^"]*)"$`, withPath)
 
-	//// start generated code
 	s.BeforeScenario(func(this *messages.Pickle) {
 		state = tstate.New(nil)
 	})
@@ -178,5 +174,4 @@ func FeatureContext(s *godog.Suite) {
 		// delete namespace an all the content
 		_ = utils.DeleteKubeNamespace(utils.KubeClient, state.Namespace)
 	})
-	//// end generated code
 }

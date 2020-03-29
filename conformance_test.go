@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,9 +35,6 @@ import (
 
 var (
 	exitCode int
-
-	// default test output is stdout
-	output = os.Stdout
 )
 
 var (
@@ -49,15 +47,8 @@ var (
 	manifests string
 )
 
-const (
-	// do not run tests concurrently
-	runTestsSerially = 1
-
-	// expected exit code
-	successExitCode = 0
-)
-
 func TestMain(m *testing.M) {
+	// register flags from klog
 	klog.InitFlags(nil)
 
 	flag.StringVar(&godogFormat, "format", "pretty", "Sets godog format to use")
@@ -74,32 +65,22 @@ func TestMain(m *testing.M) {
 
 	manifestsPath, err := filepath.Abs(manifests)
 	if err != nil {
-		klog.Fatal(err)
+		log.Fatal(err)
 	}
 
 	if !utils.IsDir(manifestsPath) {
-		klog.Fatalf("The specified value in the flag --manifests-directory (%v) is not a directory", manifests)
+		log.Fatalf("The specified value in the flag --manifests-directory (%v) is not a directory", manifests)
 	}
 
 	utils.ManifestPath = manifestsPath
 
 	utils.KubeClient, err = setupSuite()
 	if err != nil {
-		klog.Fatal(err)
+		log.Fatal(err)
 	}
 
 	if err := utils.CleanupNamespaces(utils.KubeClient); err != nil {
-		klog.Fatalf("error deleting temporal namespaces: %v", err)
-	}
-
-	if godogOutput != "" {
-		file, err := os.Create(godogOutput)
-		if err != nil {
-			klog.Fatal(err)
-		}
-
-		defer file.Close()
-		output = file
+		log.Fatalf("error deleting temporal namespaces: %v", err)
 	}
 
 	if code := m.Run(); code > exitCode {
@@ -123,7 +104,7 @@ func setupSuite() (*clientset.Clientset, error) {
 	}
 
 	if serverVersion != nil {
-		klog.Infof("kube-apiserver version: %s", serverVersion.GitVersion)
+		log.Printf("kube-apiserver version: %s", serverVersion.GitVersion)
 	}
 
 	return c, nil
@@ -131,27 +112,45 @@ func setupSuite() (*clientset.Clientset, error) {
 
 var (
 	features = map[string]func(*godog.Suite){
-		"features/default_backend.feature": defaultbackend.FeatureContext,
-		"features/without_host.feature":    withouthost.FeatureContext,
+		"features/featuresdefault_backend.feature": defaultbackend.FeatureContext,
+		"features/without_host.feature":            withouthost.FeatureContext,
 	}
 )
 
 func TestSuite(t *testing.T) {
 	for feature, featureContext := range features {
-		exitCode += godog.RunWithOptions("conformance", func(s *godog.Suite) {
-			featureContext(s)
-		}, godog.Options{
-			Format:        godogFormat,
-			Paths:         []string{feature},
-			Tags:          godogTags,
-			StopOnFailure: godogStopOnFailure,
-			NoColors:      godogNoColors,
-			Output:        output,
-			Concurrency:   runTestsSerially,
-		})
+		//TODO: refactor to remove the defer
+		func() {
+			output := os.Stdout
+			if godogFormat == "cucumber" {
+				rf := fmt.Sprintf("%v-report.json", feature)
+				file, err := os.Create(rf)
+				if err != nil {
+					t.Fatalf("Error creating report file %v: %v", rf, err)
+				}
 
-		if exitCode != successExitCode {
-			t.Fatalf("Error encountered running the test suite")
-		}
+				output = file
+				defer func() {
+					_ = file.Sync()
+					_ = file.Close()
+				}()
+			}
+
+			exitCode += godog.RunWithOptions("conformance", func(s *godog.Suite) {
+				featureContext(s)
+			}, godog.Options{
+				Format:        godogFormat,
+				Paths:         []string{feature},
+				Tags:          godogTags,
+				StopOnFailure: godogStopOnFailure,
+				NoColors:      godogNoColors,
+				Output:        output,
+				Concurrency:   1, // do not run tests concurrently
+			})
+
+			if exitCode != 0 {
+				t.Fatalf("Error encountered running the test suite")
+			}
+		}()
 	}
 }

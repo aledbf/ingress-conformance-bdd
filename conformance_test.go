@@ -112,8 +112,8 @@ func setupSuite() (*clientset.Clientset, error) {
 
 var (
 	features = map[string]func(*godog.Suite){
-		"features/featuresdefault_backend.feature": defaultbackend.FeatureContext,
-		"features/without_host.feature":            withouthost.FeatureContext,
+		"features/default_backend.feature": defaultbackend.FeatureContext,
+		"features/without_host.feature":    withouthost.FeatureContext,
 	}
 )
 

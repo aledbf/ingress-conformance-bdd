@@ -232,6 +232,10 @@ function %v
 			if err != nil {
 				return err
 			}
+
+			featFile := filepath.Base(path)
+			log.Printf(`Please add '"features/%v": %v.FeatureContext' to features map defined in conformance_test.go (order matters)`,
+				featFile, mapping.Package)
 		}
 
 		return nil

@@ -72,6 +72,7 @@ func main() {
 	if len(features) == 1 && utils.IsDir(features[0]) {
 		root := filepath.Dir(features[0])
 		features = []string{}
+
 		err := filepath.Walk(root, visitDir(&features))
 		if err != nil {
 			log.Fatalf("Unexpected error reading directory %v: %v", root, err)
@@ -156,6 +157,7 @@ func processFeature(path, conformance string, update bool, template *template.Te
 		}
 
 		continueLoop := true
+
 		for _, feature := range mapping.Features {
 			for _, gofunc := range mapping.GoDefinitions {
 				if feature.Name != gofunc.Name {
@@ -172,6 +174,7 @@ func processFeature(path, conformance string, update bool, template *template.Te
 					})
 
 					continueLoop = false
+
 					break
 				}
 			}
@@ -204,6 +207,7 @@ function %v
 	if !isGoFileOk {
 		log.Printf("Generating new go file %v...", mapping.GoFile)
 		buf := bytes.NewBuffer(make([]byte, 0))
+
 		err := template.Execute(buf, mapping)
 		if err != nil {
 			return err
@@ -220,11 +224,10 @@ function %v
 		return nil
 	}
 
-	log.Printf("Updating go file %v...", mapping.GoFile)
-	log.Printf("%v\n", mapping.NewFunctions)
-
 	// 10. if update is set
 	if update {
+		log.Printf("Updating go file %v...", mapping.GoFile)
+		log.Printf("%v\n", mapping.NewFunctions)
 	}
 
 	return nil
@@ -392,9 +395,9 @@ func argsFromMap(args *orderedmap.OrderedMap, onlyType bool) string {
 		}
 
 		if onlyType {
-			s = s + fmt.Sprintf("%v, ", v)
+			s += fmt.Sprintf("%v, ", v)
 		} else {
-			s = s + fmt.Sprintf("%v %v, ", k, v)
+			s += fmt.Sprintf("%v %v, ", k, v)
 		}
 	}
 

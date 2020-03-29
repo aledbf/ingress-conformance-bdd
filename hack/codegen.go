@@ -187,6 +187,11 @@ function %v
 
 	// 12. New go feature file
 	if !isGoFileOk {
+		if !update {
+			return fmt.Errorf("generated code is out of date (from %v feature, new go file %v)",
+				mapping.FeatureFile, mapping.GoFile)
+		}
+
 		log.Printf("Generating new go file %v...", mapping.GoFile)
 		buf := bytes.NewBuffer(make([]byte, 0))
 
@@ -197,6 +202,14 @@ function %v
 
 		// 10. if update is set
 		if update {
+			isDirOk := utils.IsDir(mapping.GoFile)
+			if !isDirOk {
+				err := os.MkdirAll(filepath.Dir(mapping.GoFile), 0755)
+				if err != nil {
+					return err
+				}
+			}
+
 			err := ioutil.WriteFile(mapping.GoFile, buf.Bytes(), 0644)
 			if err != nil {
 				return err

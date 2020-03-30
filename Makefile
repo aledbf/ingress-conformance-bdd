@@ -35,17 +35,18 @@ run-conformance: ## Run conformance tests using a pod
 
 build-report: ## Run tests and generate HTML report in directory
 	echo "Running go tests with cucumber output..."
-	go test -v --output-file "$(ROOT_DIR)/reports/ingress-conformance.json" --format cucumber
+	go test -v --format cucumber
 
 	echo "Generating report..."
 	@docker run --rm \
 		--name build-report \
 		-v "$(ROOT_DIR)/reports/build":/usr/src/conformance \
 		-v "$(ROOT_DIR)/.m2":/var/maven/.m2 \
-		-v "$(ROOT_DIR)/reports/output":/report-output:rw \
-		-v "$(ROOT_DIR)/reports/ingress-conformance.json":/input.json:ro \
+		-v "$(ROOT_DIR)/reports":/reports \
 		-w /usr/src/conformance \
 		-e MAVEN_CONFIG=/var/maven/.m2 \
+		-e INPUT_JSON_FILES=/reports \
+		-e OUTPUT_DIRECTORY=/reports/output \
 		-u $(shell id -u):$(shell id -g) \
 		maven:3.6.3-jdk-11-slim mvn -Duser.home=/var/maven clean compile exec:java
 
@@ -58,7 +59,7 @@ show-report: build-report ## Starts NGINX locally to access reports using http:/
 		-p 8080:8080 \
 		-v "$(PWD)/reports/output/cucumber-html-reports":/www:ro \
 		-v "$(PWD)/reports/output/nginx.conf":/etc/nginx/nginx.conf:ro \
-		nginx:1.17.8-alpine
+		nginx:1.17.9-alpine
 
 local-cluster: ## Create local cluster using kind
 ifeq ($(shell which kind >/dev/null 2>&1 && kind version),)

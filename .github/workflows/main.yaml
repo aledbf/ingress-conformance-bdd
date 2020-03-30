@@ -60,12 +60,12 @@ jobs:
       - name: Run tests (go test)
         shell: bash
         run: |
-          go test --output-file reports/ingress-conformance.json --format cucumber
+          go test --format cucumber
 
       - uses: actions/upload-artifact@v1
         with:
-          name: ingress-conformance.json
-          path: reports/ingress-conformance.json
+          name: ingress-conformance
+          path: "*-report.json"
 
       # Check tests run as a pod
       - name: Run tests (pod)
@@ -106,7 +106,7 @@ jobs:
 
       - uses: actions/download-artifact@v1
         with:
-          name: ingress-conformance.json
+          name: ingress-conformance
           path: reports
 
       - name: Cache for maven dependencies
@@ -121,7 +121,7 @@ jobs:
         shell: bash
         run: |
           export OUTPUT_DIRECTORY=$PWD/reports/output
-          export INPUT_JSON=$PWD/reports/ingress-conformance.json
+          export INPUT_JSON_FILES=$PWD/reports
           export TREND_JSON=$PWD/reports/output/trends.json
 
           cd reports/build

@@ -123,7 +123,7 @@ func TestSuite(t *testing.T) {
 		func() {
 			output := os.Stdout
 			if godogFormat == "cucumber" {
-				rf := fmt.Sprintf("%v-report.json", feature)
+				rf := fmt.Sprintf("%v-report.json", filepath.Base(feature))
 				file, err := os.Create(rf)
 				if err != nil {
 					t.Fatalf("Error creating report file %v: %v", rf, err)

@@ -15,6 +15,8 @@ endif
 
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
+K8S_VERSION ?= v1.18.0@sha256:0e20578828edd939d25eb98496a685c76c98d54084932f76069f886ec315d694
+
 help:  ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
@@ -67,7 +69,7 @@ ifeq ($(shell which kind >/dev/null 2>&1 && kind version),)
 endif
 ifeq ($(shell kind get clusters -q),)
 	echo "Creating kind cluster..."
-	kind create cluster --config .github/kind.yaml || true
+	kind create cluster --config .github/kind.yaml --image "kindest/node:${K8S_VERSION}" || true
 	kubectl get nodes
 else
 	echo "Using existing kind cluster"

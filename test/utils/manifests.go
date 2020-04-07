@@ -1,12 +1,14 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	clientset "k8s.io/client-go/kubernetes"
@@ -47,7 +49,7 @@ func CreateFromPath(c clientset.Interface,
 		return nil, err
 	}
 
-	_, err = c.CoreV1().ReplicationControllers(ns).Create(rc)
+	_, err = c.CoreV1().ReplicationControllers(ns).Create(context.TODO(), rc, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +64,7 @@ func CreateFromPath(c clientset.Interface,
 		svc.Annotations = svcAnnotations
 	}
 
-	_, err = c.CoreV1().Services(ns).Create(svc)
+	_, err = c.CoreV1().Services(ns).Create(context.TODO(), svc, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +82,7 @@ func CreateFromPath(c clientset.Interface,
 			return nil, err
 		}
 
-		_, err = c.CoreV1().Secrets(ns).Create(secret)
+		_, err = c.CoreV1().Secrets(ns).Create(context.TODO(), secret, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +106,7 @@ func CreateFromPath(c clientset.Interface,
 		ing.Annotations[IngressClassKey] = IngressClassValue
 	}
 
-	ing, err = c.NetworkingV1beta1().Ingresses(ns).Create(ing)
+	ing, err = c.NetworkingV1beta1().Ingresses(ns).Create(context.TODO(), ing, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}

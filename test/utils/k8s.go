@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -36,7 +37,7 @@ var KubeClient *kubernetes.Clientset
 // WaitForService waits until the service appears (exist == true), or disappears (exist == false)
 func WaitForService(c clientset.Interface, namespace, name string, exist bool, interval, timeout time.Duration) error {
 	err := wait.PollImmediate(interval, timeout, func() (bool, error) {
-		_, err := c.CoreV1().Services(namespace).Get(name, metav1.GetOptions{})
+		_, err := c.CoreV1().Services(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 		switch {
 		case err == nil:
 			klog.Infof("Service %s in namespace %s found.", name, namespace)
@@ -65,7 +66,7 @@ func WaitForService(c clientset.Interface, namespace, name string, exist bool, i
 func WaitForServiceEndpointsNum(c clientset.Interface, namespace, serviceName string,
 	expectNum int, interval, timeout time.Duration) error {
 	return wait.Poll(interval, timeout, func() (bool, error) {
-		list, err := c.CoreV1().Endpoints(namespace).List(metav1.ListOptions{})
+		list, err := c.CoreV1().Endpoints(namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -127,7 +128,7 @@ func CreateTestNamespace(c kubernetes.Interface) (string, error) {
 
 	var err error
 
-	ns, err = c.CoreV1().Namespaces().Create(ns)
+	ns, err = c.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{})
 	if err != nil {
 		return "", fmt.Errorf("unable to create namespace: %v", err)
 	}
@@ -140,7 +141,7 @@ func DeleteKubeNamespace(c kubernetes.Interface, namespace string) error {
 	grace := int64(0)
 	pb := metav1.DeletePropagationBackground
 
-	return c.CoreV1().Namespaces().Delete(namespace, &metav1.DeleteOptions{
+	return c.CoreV1().Namespaces().Delete(context.TODO(), namespace, metav1.DeleteOptions{
 		GracePeriodSeconds: &grace,
 		PropagationPolicy:  &pb,
 	})
@@ -148,7 +149,7 @@ func DeleteKubeNamespace(c kubernetes.Interface, namespace string) error {
 
 // CleanupNamespaces removes namespaces created by conformance tests
 func CleanupNamespaces(c kubernetes.Interface) error {
-	namespaces, err := c.CoreV1().Namespaces().List(metav1.ListOptions{
+	namespaces, err := c.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "app.kubernetes.io/name=ingress-conformance",
 	})
 
@@ -189,7 +190,7 @@ func CreateIngress(c kubernetes.Interface, ingress *v1beta1.Ingress) (*v1beta1.I
 		return nil, err
 	}
 
-	return c.NetworkingV1beta1().Ingresses(ingress.Namespace).Get(ingress.Name, metav1.GetOptions{})
+	return c.NetworkingV1beta1().Ingresses(ingress.Namespace).Get(context.TODO(), ingress.Name, metav1.GetOptions{})
 }
 
 func createIngressWithRetries(c kubernetes.Interface, namespace string, obj *v1beta1.Ingress) error {
@@ -198,7 +199,7 @@ func createIngressWithRetries(c kubernetes.Interface, namespace string, obj *v1b
 	}
 
 	createFunc := func() (bool, error) {
-		_, err := c.NetworkingV1beta1().Ingresses(namespace).Create(obj)
+		_, err := c.NetworkingV1beta1().Ingresses(namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 		if err == nil {
 			return true, nil
 		}
@@ -240,7 +241,7 @@ func WaitForIngressAddress(c clientset.Interface, ns, ingName string, timeout ti
 
 // getIngressAddress returns the ips/hostnames associated with the Ingress.
 func getIngressAddress(c clientset.Interface, ns, name string) ([]string, error) {
-	ing, err := c.NetworkingV1beta1().Ingresses(ns).Get(name, metav1.GetOptions{})
+	ing, err := c.NetworkingV1beta1().Ingresses(ns).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

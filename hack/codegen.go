@@ -316,10 +316,10 @@ var (
 	state *tstate.Scenario
 )
 
-{{ range .NewFunctions }}func {{ .Name }}{{ argsFromMap .Args false }} error {
+{{ range .NewFunctions }}
+func {{ .Name }}{{ argsFromMap .Args false }} error {
 	return godog.ErrPending
 }
-
 {{end}}
 
 func FeatureContext(s *godog.Suite) { {{ range .NewFunctions }}

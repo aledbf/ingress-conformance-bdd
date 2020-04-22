@@ -77,7 +77,7 @@ $(document).ready(function() {
     <tr class="info">
       <td>Ingress Conformance Test</td>
         <td>1</td>
-      <td>25 Mar 2020, 23:14</td>
+      <td>22 Apr 2020, 23:26</td>
     </tr>
   </tbody>
 </table>
@@ -130,19 +130,19 @@ $(document).ready(function() {
         <tbody>
         <tr>
           <td class="tagname">Default backend</td>
-          <td      class="passed"    >5</td>
+          <td      class="passed"    >23</td>
           <td >0</td>
           <td >0</td>
           <td >0</td>
-          <td   class="undefined" >18</td>
+          <td >0</td>
           <td class="total">23</td>
 
+          <td  class="passed"    >4</td>
           <td >0</td>
-          <td  class="failed"    >4</td>
           <td class="total">4</td>
 
-          <td class="duration" data-value="6136283183">6.136</td>
-          <td class="failed">Failed</td>
+          <td class="duration" data-value="24172226757">24.172</td>
+          <td class="passed">Passed</td>
         </tr>
         </tbody>
 
@@ -178,7 +178,7 @@ $(document).ready(function() {
 </div>
 
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Feature</span>
   <span class="name">Default backend</span>
 
@@ -209,12 +209,12 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">0.005</span>
+  <span class="lead-duration duration">0.009</span>
 
 
-  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-1">
+  <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-1">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Scenario</span>
   <span class="name">Ingress with host and no backend serviceName</span>
 
@@ -232,9 +232,9 @@ $(document).ready(function() {
 
 
 <div class="steps inner-level">
-  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-2">
+  <div data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#steps-2">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Steps</span>
   <span class="name"></span>
 
@@ -275,11 +275,11 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">reading Ingress from manifest &quot;scenarios/001/ing.yaml&quot;</span>
 
-  <span class="lead-duration duration">0.000</span>
+  <span class="lead-duration duration">0.001</span>
 
 </div>
 
@@ -302,11 +302,11 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-Then undefined">
+<div class="brief step-name-Then passed">
   <span class="keyword indention">Then</span>
-  <span class="name">creating Ingress from manifest returns an error message containing &quot;http.backend.serviceName: Required value&quot;</span>
+  <span class="name">creating Ingress from manifest returns an error message containing &quot;spec.rules[0].http.paths[0].backend.serviceName: Required value&quot;</span>
 
-  <span class="lead-duration duration">0.000</span>
+  <span class="lead-duration duration">0.002</span>
 
 </div>
 
@@ -348,12 +348,12 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">0.004</span>
+  <span class="lead-duration duration">5.057</span>
 
 
-  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-3">
+  <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-3">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Scenario</span>
   <span class="name">Ingress with host and invalid backend</span>
 
@@ -371,9 +371,9 @@ $(document).ready(function() {
 
 
 <div class="steps inner-level">
-  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-4">
+  <div data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#steps-4">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Steps</span>
   <span class="name"></span>
 
@@ -391,7 +391,7 @@ $(document).ready(function() {
   <span class="keyword indention">Given</span>
   <span class="name">a new random namespace</span>
 
-  <span class="lead-duration duration">0.004</span>
+  <span class="lead-duration duration">0.008</span>
 
 </div>
 
@@ -414,7 +414,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">reading Ingress from manifest &quot;scenarios/002/ing.yaml&quot;</span>
 
@@ -441,11 +441,11 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">creating Ingress from manifest</span>
 
-  <span class="lead-duration duration">0.000</span>
+  <span class="lead-duration duration">0.040</span>
 
 </div>
 
@@ -468,11 +468,11 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-When undefined">
+<div class="brief step-name-When passed">
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">0.000</span>
+  <span class="lead-duration duration">5.007</span>
 
 </div>
 
@@ -495,7 +495,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">Header &quot;Host&quot; with value &quot;foo.bar&quot;</span>
 
@@ -522,7 +522,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">Send HTTP request with method &quot;GET&quot;</span>
 
@@ -549,7 +549,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-Then undefined">
+<div class="brief step-name-Then passed">
   <span class="keyword indention">Then</span>
   <span class="name">Response status code is 404</span>
 
@@ -595,12 +595,12 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">0.021</span>
+  <span class="lead-duration duration">10.028</span>
 
 
-  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-5">
+  <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-5">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Scenario</span>
   <span class="name">Ingress should return 404 for paths with an invalid backend serviceName</span>
 
@@ -618,9 +618,9 @@ $(document).ready(function() {
 
 
 <div class="steps inner-level">
-  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-6">
+  <div data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#steps-6">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Steps</span>
   <span class="name"></span>
 
@@ -638,7 +638,7 @@ $(document).ready(function() {
   <span class="keyword indention">Given</span>
   <span class="name">a new random namespace</span>
 
-  <span class="lead-duration duration">0.021</span>
+  <span class="lead-duration duration">0.003</span>
 
 </div>
 
@@ -661,7 +661,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">reading Ingress from manifest &quot;scenarios/003/ing.yaml&quot;</span>
 
@@ -688,11 +688,11 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">creating Ingress from manifest</span>
 
-  <span class="lead-duration duration">0.000</span>
+  <span class="lead-duration duration">0.015</span>
 
 </div>
 
@@ -715,11 +715,11 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-When undefined">
+<div class="brief step-name-When passed">
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">0.000</span>
+  <span class="lead-duration duration">10.006</span>
 
 </div>
 
@@ -742,7 +742,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">Header &quot;Host&quot; with value &quot;foo.bar&quot;</span>
 
@@ -769,11 +769,11 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-Then undefined">
+<div class="brief step-name-Then passed">
   <span class="keyword indention">Then</span>
   <span class="name">Send HTTP request with &lt;path&gt; and &lt;method&gt; checking response status code is 404:</span>
 
-  <span class="lead-duration duration">0.000</span>
+  <span class="lead-duration duration">0.002</span>
 
 </div>
 
@@ -841,12 +841,12 @@ $(document).ready(function() {
 </div>
 
 
-  <span class="lead-duration duration">6.105</span>
+  <span class="lead-duration duration">9.077</span>
 
 
-  <span data-toggle="collapse" class=" collapsable-control" data-target="#element-7">
+  <span data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#element-7">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Scenario</span>
   <span class="name">Ingress with valid host and path /test should return 404 for unmapped path &quot;/&quot;</span>
 
@@ -864,9 +864,9 @@ $(document).ready(function() {
 
 
 <div class="steps inner-level">
-  <div data-toggle="collapse" class=" collapsable-control" data-target="#steps-8">
+  <div data-toggle="collapse" class=" collapsed  collapsable-control" data-target="#steps-8">
 
-<div class="brief failed">
+<div class="brief passed">
   <span class="keyword indention">Steps</span>
   <span class="name"></span>
 
@@ -884,7 +884,7 @@ $(document).ready(function() {
   <span class="keyword indention">Given</span>
   <span class="name">a new random namespace</span>
 
-  <span class="lead-duration duration">0.012</span>
+  <span class="lead-duration duration">0.002</span>
 
 </div>
 
@@ -911,7 +911,7 @@ $(document).ready(function() {
   <span class="keyword indention">And</span>
   <span class="name">creating objects from directory &quot;scenarios/004&quot;</span>
 
-  <span class="lead-duration duration">6.093</span>
+  <span class="lead-duration duration">4.068</span>
 
 </div>
 
@@ -934,11 +934,11 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-When undefined">
+<div class="brief step-name-When passed">
   <span class="keyword indention">When</span>
   <span class="name">The ingress status shows the IP address or FQDN where is exposed</span>
 
-  <span class="lead-duration duration">0.000</span>
+  <span class="lead-duration duration">5.005</span>
 
 </div>
 
@@ -961,7 +961,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">With path &quot;/&quot;</span>
 
@@ -988,7 +988,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">Header &quot;Host&quot; with value &quot;foo.bar&quot;</span>
 
@@ -1015,7 +1015,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-And undefined">
+<div class="brief step-name-And passed">
   <span class="keyword indention">And</span>
   <span class="name">Send HTTP request with method &quot;GET&quot;</span>
 
@@ -1042,7 +1042,7 @@ $(document).ready(function() {
       <div class="step">
 
 
-<div class="brief step-name-Then undefined">
+<div class="brief step-name-Then passed">
   <span class="keyword indention">Then</span>
   <span class="name">Response status code is 404</span>
 

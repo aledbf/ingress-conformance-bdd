@@ -41,7 +41,7 @@ saveResults() {
 trap shutdown TERM
 
 set -x
-/ingress-conformance-bdd.test --features=/features --manifests=/manifests # -format cucumber "${RESULTS_DIR}"/ingress-conformance.json
+/ingress-conformance-bdd.test --manifests=/manifests # -format cucumber "${RESULTS_DIR}"/ingress-conformance.json
 ret=$?
 set -x
 #saveResults

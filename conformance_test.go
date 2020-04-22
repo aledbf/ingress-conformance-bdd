@@ -52,7 +52,7 @@ func TestMain(m *testing.M) {
 	// register flags from klog
 	klog.InitFlags(nil)
 
-	flag.StringVar(&godogFormat, "format", "pretty", "Sets godog format to use")
+	flag.StringVar(&godogFormat, "format", "pretty", "Set godog format to use")
 	flag.StringVar(&godogTags, "tags", "", "Tags for conformance test")
 	flag.BoolVar(&godogStopOnFailure, "stop-on-failure ", false, "Stop when failure is found")
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")

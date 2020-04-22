@@ -20,6 +20,12 @@ jobs:
         with:
           version: v0.7.0
           config: .github/kind.yaml
+          image: kindest/node:v1.18.0@sha256:0e20578828edd939d25eb98496a685c76c98d54084932f76069f886ec315d694
+
+      - run: |
+          kubectl cluster-info
+          echo "current-context:" $(kubectl config current-context)
+          echo "environment-kubeconfig:" ${KUBECONFIG}
 
       - name: Install ingress controller
         run: |
@@ -60,12 +66,12 @@ jobs:
       - name: Run tests (go test)
         shell: bash
         run: |
-          go test --format cucumber
+          go test -v --format cucumber --output-directory .
 
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2-preview
         with:
           name: ingress-conformance
-          path: "*-report.json"
+          path: "*.json"
 
       # Check tests run as a pod
       - name: Run tests (pod)
@@ -104,7 +110,7 @@ jobs:
         with:
           java-version: 11
 
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v2-preview
         with:
           name: ingress-conformance
           path: reports

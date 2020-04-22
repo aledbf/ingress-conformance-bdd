@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -57,7 +58,7 @@ func TestMain(m *testing.M) {
 	flag.BoolVar(&godogNoColors, "no-colors", false, "Disable colors in godog output")
 	flag.StringVar(&manifests, "manifests", "./manifests",
 		"Directory where manifests for test applications or scenerarios are located")
-	flag.StringVar(&godogOutput, "output-file", "", "Output file for test")
+	flag.StringVar(&godogOutput, "output-directory", ".", "Output directory for test reports")
 	flag.StringVar(&utils.IngressClassValue, "ingress-class", "conformance",
 		"Sets the value of the annotation kubernetes.io/ingress.class in Ingress definitions")
 
@@ -123,7 +124,7 @@ func TestSuite(t *testing.T) {
 		func() {
 			output := os.Stdout
 			if godogFormat == "cucumber" {
-				rf := fmt.Sprintf("%v-report.json", filepath.Base(feature))
+				rf := path.Join(godogOutput, fmt.Sprintf("%v-report.json", filepath.Base(feature)))
 				file, err := os.Create(rf)
 				if err != nil {
 					t.Fatalf("Error creating report file %v: %v", rf, err)

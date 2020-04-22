@@ -37,7 +37,8 @@ run-conformance: ## Run conformance tests using a pod
 
 build-report: ## Run tests and generate HTML report in directory
 	echo "Running go tests with cucumber output..."
-	go test -v --format cucumber
+	mkdir -p reports
+	go test -v --format cucumber --output-directory reports
 
 	echo "Generating report..."
 	@docker run --rm \

@@ -38,3 +38,20 @@ make test
 make local-cluster (optional)
 make show-report
 ```
+
+### Test a different ingress controller
+
+1. Fork the repository
+2. Configure project Secret `INGRESS_CONTROLLER`:
+  - Containing a link to an installation script, like https://gist.github.com/aledbf/7e67bcb338fa6a1696eb5b101597224e (Raw link)
+
+The secret is used in the Github Action [Workflow](https://github.com/aledbf/ingress-conformance-bdd/blob/master/.github/workflows/main.yaml#L34)
+
+That is it. The Github workflow is ready to run using a different ingress controller or configuration.
+
+
+#### TODO:
+
+- Use an existing Kubernetes cluster (using `KUBECONFIG`)
+- Test a Cloud Ingress controller, like [ingress-gce](https://github.com/kubernetes/ingress-gce)
+- Run the test suite agains multiple Kubernetes versions
